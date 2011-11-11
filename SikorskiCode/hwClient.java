@@ -220,13 +220,20 @@ public class hwClient extends hwSuper implements Runnable
                             if (!encrypted)
                             {
                                 System.out.println("Sending commands!");
-                            //System.out.println("#Input client command:");
-                            //mMsg = uin.readLine();
-                            //out.println(mMsg);
-                                out.println("GET_GAME_IDENTS");
+                                System.out.println("#Input client command:");
+                                mMsg = uin.readLine();
+                                out.println(mMsg);
                             }
                             else
                             {
+                                // This is where we can send "TRANSFER_REQUEST ARG1 ARG2 FROM ARG2".
+                                // I wouldn't automate this.
+                                // I also wouldn't automate the TRANSFER_RESPONSE for the sake of not
+                                // waving through bad requests.
+                                
+                                // We should automate everything after the T_Req and T_Rep for the sake of brevity,
+                                // however.
+                            
                                 System.out.println("E>Sending commands!");
                                 System.out.println("E>#Input client command:");
                                 mMsg = uin.readLine();
