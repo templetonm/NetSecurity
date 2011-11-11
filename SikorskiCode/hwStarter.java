@@ -27,14 +27,14 @@ class hwStarter{
         // TODO: hwClient needs to take the user_password argument
         if (mode < 2)
         {
-            hwClient client = new hwClient(user_name, MONITOR_NAME, MONITOR_PORT, HOST_NAME, local_port);
-            client.start();
+//            hwClient client = new hwClient(user_name, MONITOR_NAME, MONITOR_PORT, HOST_NAME, local_port);
+//            client.start();
         }
         
         if (mode % 2 == 0)
         {
-            hwServer server = new hwServer(args[0], MONITOR_PORT, LOCAL_PORT);
-            server.start();
+ //           hwServer server = new hwServer(args[0], MONITOR_PORT, LOCAL_PORT);
+   //         server.start();
         }
     }
 

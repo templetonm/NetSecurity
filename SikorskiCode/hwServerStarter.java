@@ -12,19 +12,25 @@ class hwServerStarter{
     public static String MONITOR_NAME = "localhost";
     public static int MONITOR_PORT = 8160;
     public static String HOST_NAME = "localhost";
-    public static int LOCAL_PORT = 42749;
+//    public static int LOCAL_PORT = 42749;
     
     public static void main(String[] args)
     {
-        if (args.length != 1)
+        if (args.length != 2)
         {
             System.out.println("\nbad args\n");
+            System.out.println("Usage: java hwServerStarter user_name local_port\n");
         }
         else
         {
             try
             {
-                hwServer server = new hwServer(args[0], MONITOR_PORT, LOCAL_PORT);
+                String user_name = args[0];
+                int local_port = Integer.parseInt(args[1]);
+                
+                // set this up to use hwStarter instead of hwServer directly.
+                
+                hwServer server = new hwServer(user_name, MONITOR_PORT, local_port);
                 server.start();
             }
             catch (Exception e){}
