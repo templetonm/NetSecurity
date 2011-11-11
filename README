@@ -1,0 +1,6 @@
+Using:
+• hw3.java : Used to launch both Client and Server; good for assignments.
+• hwClientStarter.java : Used to launch Client only; good for project.
+• hwServerStarter.java : Used to launch Server only; good for project.
+
+All of these files should probably be editted alongside each other.
