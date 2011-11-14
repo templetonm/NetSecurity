@@ -220,13 +220,9 @@ class ConnectionHandler extends hwSuper implements Runnable
                         {
                             waiting = true;
                         }
-                        else if (sMsg > 9)
-                        {
-                            waiting = true;
-                        }
                     }
                     
-                  //  System.out.format("--SERVER%d: Server state: %d\n", threadID, sMsg);
+                    System.out.format("--SERVER%d: Server state: %d\n", threadID, sMsg);
                     
                     switch(sMsg)
                     {
@@ -267,6 +263,7 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 mMsg = "ALIVE " + mMsg;
                                 out.println(kDE.encrypt(mMsg));
                             }
+                            break;
                         case 3:
                             if (!encrypted)
                             {
