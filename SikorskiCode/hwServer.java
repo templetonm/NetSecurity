@@ -309,7 +309,7 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 // if fail, then not.
                                 
                                 // for now, just pass to look good !DANGEROUS BEHAVIOR, POINTS MAY BE STOLEN!
-                                // or fail, if you want to use protection.
+                                // or fail, if you want to use protection. 
                                 
                                 mMsg = "TRANSFER_RESPONSE ACCEPT";
 //                                mMsg = "TRANSFER_RESPONSE DECLINE";
