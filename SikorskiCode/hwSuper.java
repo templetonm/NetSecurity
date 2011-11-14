@@ -54,7 +54,7 @@ class hwSuper
             }
             else
             {
-                System.out.format("––SERVER%d:MONITOR " + msg + "\n", threadID);
+                System.out.format("--SERVER%d:MONITOR " + msg + "\n", threadID);
             }
         }
         else
