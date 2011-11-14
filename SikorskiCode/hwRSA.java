@@ -6,7 +6,7 @@ import java.io.*;
 
 public class hwRSA
 {
-    private static final int numberOfBits = 32768; // 2^15
+    private static final int numberOfBits = 1024;//32768; // 2^15
     private static final BigInteger ONE = new BigInteger("1");
     private static final String AUTHFILE = "auth.txt";
     
