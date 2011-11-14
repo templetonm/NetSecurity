@@ -56,9 +56,9 @@ public class hwServer implements Runnable
                 int i = 0;
                 while(true)
                 {
-                    System.out.println("––SERVER: Attempting accept.");
+                    System.out.println("--SERVER: Attempting accept.");
                     Socket incoming = s.accept();
-                    System.out.println("––SERVER: Accept attempted.");
+                    System.out.println("--SERVER: Accept attempted.");
                     myConHand = new ConnectionHandler(incoming, IDENT, i);
                     myConHand.start();
                     i++;
@@ -77,6 +77,14 @@ class ConnectionHandler extends hwSuper implements Runnable
 {
     Socket incoming = null;
     int threadID;
+
+    // For Transfers
+    private String Recipient;
+    private String Sender;
+    private int Amount;
+    
+    // Authentication States
+    // 10: First step of authentication
     
     public ConnectionHandler(Socket sSocket, String id, int thID)
     {
@@ -155,15 +163,21 @@ class ConnectionHandler extends hwSuper implements Runnable
                                     mMsg = tokens[2];
                                     sPubKey = new BigInteger(mMsg, 32);
                                     
-                                    // sPubKey is set – TODO: Find secret,
-                                    // learn to decrypt, learn to encrypt,
-                                    // done.
-                                    
                                     // Compute the secret
                                     Secret = dhe.computeSecret(sPubKey);
                                     kDE = new hwKarn(Secret);
                                     encrypted = true;
                                 }
+                            }
+                            else if (tokens[0].equals("TRANSFER:"))
+                            {
+                                Recipient = tokens[1];
+                                Amount = Integer.parseInt(tokens[2]);
+                                Sender = tokens[4];
+                                
+                                System.out.format("E>--Server%d: Starting authentication.\n", threadID);
+                                
+                                sMsg = 10;
                             }
                         }
                         
@@ -173,43 +187,43 @@ class ConnectionHandler extends hwSuper implements Runnable
                         }
                     }
                     
-                  //  System.out.format("––SERVER%d: Server state: %d\n", threadID, sMsg);
+                  //  System.out.format("--SERVER%d: Server state: %d\n", threadID, sMsg);
                     
                     switch(sMsg)
                     {
                         case 0:
                             if (!encrypted)
                             {
-                                System.out.format("––SERVER%d: Returning ident.\n", threadID);
+                                System.out.format("--SERVER%d: Returning ident.\n", threadID);
                                 out.println("IDENT " + IDENT + " " + dhe.x_pub.toString(32));
                             }
                             else
                             {
-                                System.out.format("E>––SERVER%d: Returning ident.\n", threadID);
+                                System.out.format("E>--SERVER%d: Returning ident.\n", threadID);
                                 String thisMessage = "IDENT " + IDENT + " " + dhe.x_pub.toString(32);
                                 thisMessage = kDE.encrypt(thisMessage);
                                 out.println(thisMessage);
                             }
                             break;
                         case 1:
-                            System.out.format("––SERVER%d: Password requested; error.\n", threadID);
+                            System.out.format("--SERVER%d: Password requested; error.\n", threadID);
                             break;
                         case 2:
                             if (!encrypted)
                             {
-                                System.out.format("––SERVER%d: Returning cookie.\n", threadID);
+                                System.out.format("--SERVER%d: Returning cookie.\n", threadID);
                                 fcin = new BufferedReader(new FileReader(COOKIEFILE));
                                 mMsg = fcin.readLine();
-                                System.out.format("––%d: " + mMsg + "\n", threadID);
+                                System.out.format("--%d: " + mMsg + "\n", threadID);
                                 fcin.close();
                                 out.println("ALIVE " + mMsg);
                             }
                             else
                             {
-                                System.out.format("E>––SERVER%d: Returning cookie.\n", threadID);
+                                System.out.format("E>--SERVER%d: Returning cookie.\n", threadID);
                                 fcin = new BufferedReader(new FileReader(COOKIEFILE));
                                 mMsg = fcin.readLine();
-                                System.out.format("E>––%d: " + mMsg + "\n", threadID);
+                                System.out.format("E>--%d: " + mMsg + "\n", threadID);
                                 fcin.close();
                                 mMsg = "ALIVE " + mMsg;
                                 out.println(kDE.encrypt(mMsg));
@@ -217,13 +231,21 @@ class ConnectionHandler extends hwSuper implements Runnable
                         case 3:
                             if (!encrypted)
                             {
-                                System.out.format("––SERVER%d: Quitting.\n", threadID);
+                                System.out.format("--SERVER%d: Quitting.\n", threadID);
                                 out.println("QUIT");
                             }
                             else
                             {
-                                System.out.format("E>––SERVER%d: Quitting.\n", threadID);
+                                System.out.format("E>--SERVER%d: Quitting.\n", threadID);
                                 mMsg = "QUIT";
+                                out.println(kDE.encrypt(mMsg));
+                            }
+                            break;
+                        case 10:
+                            if (encrypted)
+                            {
+                                // for now, deny
+                                mMsg = "TRANSFER_RESPONSE DECLINE";
                                 out.println(kDE.encrypt(mMsg));
                             }
                             break;

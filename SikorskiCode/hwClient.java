@@ -115,10 +115,6 @@ public class hwClient extends hwSuper implements Runnable
                                     // This is the serverPubKey.
                                     mMsg = tokens[2];
                                     sPubKey = new BigInteger(mMsg, 32);
-
-                                    // sPubKey is set – TODO: Find secret,
-                                    // learn to decrypt, learn to encrypt,
-                                    // done.
                                     
                                     // Compute the secret
                                     Secret = dhe.computeSecret(sPubKey);
@@ -259,13 +255,13 @@ public class hwClient extends hwSuper implements Runnable
                                 
                                 // tokenize this to check for transfer; we unset 'free' if this is the case.
                                 String[] tokens = mMsg.split(" ");
-                                if (tokens.length == 4) // Hopefully a transfer request
+                                if (tokens.length == 5) // Hopefully a transfer request
                                 {
                                     if (tokens[0].equals("TRANSFER_REQUEST"))
                                     {
                                         Recipient = tokens[1];
                                         Amount = Integer.parseInt(tokens[2]);
-                                        Sender = tokens[3];
+                                        Sender = tokens[4];
                                         
                                         free = false;
                                         sMsg = 10; // 10 is code for first step of authentication
