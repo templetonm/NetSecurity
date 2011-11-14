@@ -82,6 +82,10 @@ class ConnectionHandler extends hwSuper implements Runnable
     private String Recipient;
     private String Sender;
     private int Amount;
+    private BigInteger mN;
+    private BigInteger mV;
+    private int lengthOfAuthorizeSet;
+    
     
     // Authentication States
     // 10: First step of authentication
@@ -151,6 +155,18 @@ class ConnectionHandler extends hwSuper implements Runnable
                         {
                             sMsg = 3;
                         }
+                        else if (mMsg.trim().equals("REQUIRE: ROUNDS"))
+                        {
+                            sMsg = 10;
+                        }
+                        else if (mMsg.trim().equals("REQUIRE: SUBSET_A"))
+                        {
+                            sMsg = 11;
+                        }
+                        else if (mMsg.trim().equals("REQUIRE: TRANSFER_RESPONSE"))
+                        {
+                            sMsg = 12;
+                        }
                         else
                         {
                             String[] tokens = mMsg.split(" ");
@@ -167,6 +183,25 @@ class ConnectionHandler extends hwSuper implements Runnable
                                     Secret = dhe.computeSecret(sPubKey);
                                     kDE = new hwKarn(Secret);
                                     encrypted = true;
+                                } else if (tokens [1].equals("PUBLIC_KEY"))
+                                {
+                                    mV = new BigInteger(tokens[2]);
+                                    mN = new BigInteger(tokens[3]);
+                                } else if (tokens [1].equals("AUTHORIZE_SET"))
+                                {
+                                    // do we need to store the authorize set?
+                                    // authorize_set = tokens[2 ... length-1];
+                                    // YES, this is how we continue the check that the initiator knows s, I think.
+                                    // TODO: save authorize_set
+                                    
+                                    int lengthOfAuthorizeSet = tokens.length - 2; // this is just number of rounds, or should be at least.
+                                } else if (tokens [1].equals("SUBSET_K"))
+                                {
+                                    // save subset_k for testing
+                                    
+                                } else if (tokens [1].equals("SUBSET_J"))
+                                {
+                                    // save subset_j for testing
                                 }
                             }
                             else if (tokens[0].equals("TRANSFER:"))
@@ -177,7 +212,7 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 
                                 System.out.format("E>--Server%d: Starting authentication.\n", threadID);
                                 
-                                sMsg = 10;
+                                //sMsg = 10;
                             }
                         }
                         
@@ -246,13 +281,40 @@ class ConnectionHandler extends hwSuper implements Runnable
                             }
                             break;
                         case 10:
-                            
                             if (encrypted)
                             {
-                                // for now, deny
-                                System.out.format("E>--SERVER%d: Decline!\n", threadID);
-                                mMsg = "TRANSFER_RESPONSE DECLINE";
+                                // for now, rounds = 1;
+                                System.out.format("E>--SERVER%d: Returning rounds.\n", threadID);
+                                
+                                mMsg = "ROUNDS 7";
                                 out.println(kDE.encrypt(mMsg));
+                            }
+                            break;
+                        case 11:
+                            if (encrypted)
+                            {
+                                System.out.format("E>--SERVER%d: Returning Subset_A.\n", threadID);
+                                
+                                mMsg = "SUBSET_A 2 4 5"; // just uses default from example for sake of brevity // TODO : fix this later
+                                
+                                out.println(kDE.encrypt(mMsg));
+                            }
+                            break;
+                        case 12:
+                            if (encrypted)
+                            {
+                                // TODO: add testing for s_K and s_J
+                                // if pass tests, response is good
+                                
+                                // if fail, then not.
+                                
+                                // for now, just pass to look good !DANGEROUS BEHAVIOR, POINTS MAY BE STOLEN!
+                                // or fail, if you want to use protection.
+                                
+                                mMsg = "TRANSFER_RESPONSE ACCEPT";
+//                                mMsg = "TRANSFER_RESPONSE DECLINE";
+                                out.println(kDE.encrypt(mMsg));
+                                
                             }
                             break;
                     }
