@@ -15,6 +15,11 @@ public class hwClient extends hwSuper implements Runnable
     PrintWriter fcout = null; // file cookie out
     Socket mySocket = null;
     
+    // For Transfers
+    private String Recipient;
+    private String Sender;
+    private int Amount;
+    
     // int state
     // 0: ident
     // 1: passw
@@ -22,6 +27,8 @@ public class hwClient extends hwSuper implements Runnable
     // 3: hostport
     // 5: user input
     // -1: Default to userinput to allow user attempt to fix problems if possible.
+    // Authentication States
+    // 10: First step of authentication
     
     public hwClient(String id, String monitor_name, int monitor_port, String host_name, int host_port)
     {
@@ -131,6 +138,18 @@ public class hwClient extends hwSuper implements Runnable
                                     free = true;
                                 }
                             }
+                            else if (sMsg > 9)
+                            {
+                                switch(sMsg)
+                                {
+                                    case 10:
+                                        // First response to auth
+                                    default:
+                                        // Oh god oh god, we're all going to die
+                                        sMsg = 5;
+                                        free = true;
+                                }
+                            }
                         }
 
                         // Save cookie here.
@@ -237,6 +256,22 @@ public class hwClient extends hwSuper implements Runnable
                                 System.out.println("E>Sending commands!");
                                 System.out.println("E>#Input client command:");
                                 mMsg = uin.readLine();
+                                
+                                // tokenize this to check for transfer; we unset 'free' if this is the case.
+                                String[] tokens = mMsg.split(" ");
+                                if (tokens.length == 4) // Hopefully a transfer request
+                                {
+                                    if (tokens[0].equals("TRANSFER_REQUEST"))
+                                    {
+                                        Recipient = tokens[1];
+                                        Amount = Integer.parseInt(tokens[2]);
+                                        Sender = tokens[3];
+                                        
+                                        free = false;
+                                        sMsg = 10; // 10 is code for first step of authentication
+                                    }
+                                }
+                                
                                 out.println(kDE.encrypt(mMsg));
                                 //out.println("GET_GAME_IDENTS");
                             }
