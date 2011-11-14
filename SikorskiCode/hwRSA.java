@@ -7,7 +7,21 @@ public class hwRSA
 {
     private static final numberOfBits = 32768; // 2^15
 
-    public BigInteger getPrime(Random random)
+    public Random savedRandom = null;
+    public BigInteger p;
+    public BigInteger q;
+    public BigInteger n; // n = p * q
+    
+    public hwRSA(Random random)
+    {
+        savedRandom = random;
+        
+        p = getPrime(random);
+        q = getPrime(random);
+        n = p.multiply(q);
+    }
+    
+    private BigInteger getPrime(Random random)
     {
         return BigInteger.probablePrime(numberOfBits, random);
     }
