@@ -185,6 +185,10 @@ class ConnectionHandler extends hwSuper implements Runnable
                         {
                             waiting = true;
                         }
+                        else if (sMsg > 9)
+                        {
+                            waiting = true;
+                        }
                     }
                     
                   //  System.out.format("--SERVER%d: Server state: %d\n", threadID, sMsg);
@@ -242,9 +246,11 @@ class ConnectionHandler extends hwSuper implements Runnable
                             }
                             break;
                         case 10:
+                            
                             if (encrypted)
                             {
                                 // for now, deny
+                                System.out.format("E>--SERVER%d: Decline!\n", threadID);
                                 mMsg = "TRANSFER_RESPONSE DECLINE";
                                 out.println(kDE.encrypt(mMsg));
                             }

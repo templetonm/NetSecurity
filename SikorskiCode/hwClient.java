@@ -115,7 +115,7 @@ public class hwClient extends hwSuper implements Runnable
                                     // This is the serverPubKey.
                                     mMsg = tokens[2];
                                     sPubKey = new BigInteger(mMsg, 32);
-                                    
+
                                     // Compute the secret
                                     Secret = dhe.computeSecret(sPubKey);
                                     kDE = new hwKarn(Secret);
