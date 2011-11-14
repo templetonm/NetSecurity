@@ -311,8 +311,8 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 // for now, just pass to look good !DANGEROUS BEHAVIOR, POINTS MAY BE STOLEN!
                                 // or fail, if you want to use protection. 
                                 
-                                mMsg = "TRANSFER_RESPONSE ACCEPT";
-//                                mMsg = "TRANSFER_RESPONSE DECLINE";
+   //                             mMsg = "TRANSFER_RESPONSE ACCEPT";
+                                mMsg = "TRANSFER_RESPONSE DECLINE";
                                 out.println(kDE.encrypt(mMsg));
                                 
                             }
