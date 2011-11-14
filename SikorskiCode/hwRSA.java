@@ -21,6 +21,7 @@ public class hwRSA
     
     // 0 Knowledge only?
     public BigInteger S;
+    public BigInteger V;
     
     public hwRSA(Random random)
     {
@@ -32,7 +33,7 @@ public class hwRSA
         phiN = (p.subtract(ONE)).multiply(q.subtract(ONE));
         
         S = getPrime(random); // s is an arbitrary secret; we'll use a prime because they're BA!!!
-        V = (s.multiply(s)).mod(n);
+        V = (S.multiply(S)).mod(n);
     }
     
     public void initialize(Random random)
