@@ -1,5 +1,5 @@
 // hwRSA.java
-// Houses all required RSA / 0-Knowledge code.
+// Houses all required RSA *and* all required 0-Knowledge code.
 import java.math.*;
 import java.util.*;
 
@@ -13,16 +13,26 @@ public class hwRSA
     public BigInteger p;
     public BigInteger q;
     public BigInteger n; // n = p * q
+    
+    // RSA only?
     public BigInteger phiN;
+    public BigInteger e; // for encryption; compute based on above.
+    public BigInteger d; // for decryption; compute based on e.
+    
+    // 0 Knowledge only?
+    public BigInteger S;
     
     public hwRSA(Random random)
     {
         savedRandom = random;
-        
-        p = getPrime(random);
+    
+        p = getPrime(random); // p and q are arbitrary large primes
         q = getPrime(random);
         n = p.multiply(q);
         phiN = (p.subtract(ONE)).multiply(q.subtract(ONE));
+        
+        S = getPrime(random); // s is an arbitrary secret; we'll use a prime because they're BA!!!
+        V = (s.multiply(s)).mod(n);
     }
     
     public void initialize(Random random)
@@ -30,6 +40,11 @@ public class hwRSA
         // initialize all the variables
     }
 
+    public void saveRSA()
+    {
+        // save out the RSA information
+    }
+    
     public void load()
     {
         // load all the variables from a saved source
