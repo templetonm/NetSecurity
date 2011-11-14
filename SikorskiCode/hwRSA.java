@@ -42,7 +42,7 @@ public class hwRSA
         // initialize all the variables
     }
 
-    public void save()
+    public void save() throws Exception
     {
         // save out the RSA information
         PrintWriter fileout = new PrintWriter(new FileWriter(AUTHFILE));
@@ -58,19 +58,19 @@ public class hwRSA
         fileout.close();
     }
     
-    public void load()
+    public void load() throws Exception
     {
         // load all the variables from a saved source
         BufferedReader filein = new BufferedReader(new FileReader(AUTHFILE));
         // assume filein.ready() is true for the moment
-        p = filein.readln();
-        q = filein.readln();
-        n = filein.readln();
-        phiN = filein.readln();
-        //e = filein.readln();
-        //d = filein.readln();
-        S = filein.readln();
-        V = filein.readln();
+        p = new BigInteger(filein.readLine());
+        q = new BigInteger(filein.readLine());
+        n = new BigInteger(filein.readLine());
+        phiN = new BigInteger(filein.readLine());
+        //e = new BigInteger(filein.readLine());
+        //d = new BigInteger(filein.readLine());
+        S = new BigInteger(filein.readLine());
+        V = new BigInteger(filein.readLine());
         filein.close();
     }
     
