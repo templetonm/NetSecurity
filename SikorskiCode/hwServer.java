@@ -85,7 +85,7 @@ class ConnectionHandler extends hwSuper implements Runnable
     private BigInteger mN;
     private BigInteger mV;
     private int lengthOfAuthorizeSet;
-    
+    private int numOfRounds;
     
     // Authentication States
     // 10: First step of authentication
@@ -280,10 +280,13 @@ class ConnectionHandler extends hwSuper implements Runnable
                         case 10:
                             if (encrypted)
                             {
-                                // for now, rounds = 1;
+                            	// 
+                            	
                                 System.out.format("E>--SERVER%d: Returning rounds.\n", threadID);
                                 
-                                mMsg = "ROUNDS 7";
+                                numOfRounds = (int) Math.random() * 15;
+                                
+                                mMsg = "ROUNDS " + numOfRounds;
                                 out.println(kDE.encrypt(mMsg));
                             }
                             break;
@@ -292,7 +295,28 @@ class ConnectionHandler extends hwSuper implements Runnable
                             {
                                 System.out.format("E>--SERVER%d: Returning Subset_A.\n", threadID);
                                 
-                                mMsg = "SUBSET_A 2 4 5"; // just uses default from example for sake of brevity // TODO : fix this later
+                                int numOfSubsetA = numOfRounds/2;
+                                int[] subsetA = new int[numOfSubsetA];
+                                
+                                for (int count = 0; count <= numOfSubsetA; )
+                                {
+                                	int indexValue = (int) Math.random() * numOfRounds;
+                                	subsetA[count] = indexValue;
+                                	
+                                	count++;
+                                }
+                                
+                                mMsg = "SUBSET_A ";
+                                
+                                for (int count2 = 0; count2 <= subsetA.length; )
+                                {
+                                	int newValue = subsetA[count2];
+                                	
+                                	String subsetValue = Integer.toString(newValue) + " ";
+                                	
+                                	mMsg.concat(subsetValue);
+                                }
+                                // mMsg = "SUBSET_A 2 4 5"; // just uses default from example for sake of brevity // TODO : fix this later
                                 
                                 out.println(kDE.encrypt(mMsg));
                             }
@@ -306,12 +330,14 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 // if fail, then not.
                                 
                                 // for now, just pass to look good !DANGEROUS BEHAVIOR, POINTS MAY BE STOLEN!
-                                // or fail, if you want to use protection. 
-                                
-   //                             mMsg = "TRANSFER_RESPONSE ACCEPT";
+                                // or fail, if you want to use protection.
+                            	
+                            	// mMsg = "TRANSFER_RESPONSE ACCEPT";
+                            }
+                            else
+                            {
                                 mMsg = "TRANSFER_RESPONSE DECLINE";
-                                out.println(kDE.encrypt(mMsg));
-                                
+                                out.println(kDE.encrypt(mMsg));   
                             }
                             break;
                     }
