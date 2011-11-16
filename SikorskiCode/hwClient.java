@@ -11,6 +11,8 @@ public class hwClient extends hwSuper implements Runnable
 	private hwRSA rsa;
 	private BigInteger N;
 	private BigInteger V;
+	private int ROUNDS;
+	private ArrayList<Integer> SUBSET_A = new ArrayList<Integer>();
 	private static String MONITOR_NAME;
 	private static int MONITOR_PORT;
 	private static String HOST_NAME;
@@ -96,7 +98,10 @@ public class hwClient extends hwSuper implements Runnable
 						// 0 passed for threadID because it hasn't got one.
 						mMsg = GetMonitorMessage(encrypted, thisIsClient, 0);
 
-						if (mMsg.trim().equals("REQUIRE: IDENT"))
+						if (mMsg.contains("COMMAND_ERROR:"))
+						{
+							free = true;
+						} else if (mMsg.trim().equals("REQUIRE: IDENT"))
 						{
 							sMsg = 0;
 						} else if (mMsg.trim().equals("REQUIRE: PASSWORD"))
@@ -126,8 +131,7 @@ public class hwClient extends hwSuper implements Runnable
 						} else if (mMsg.trim().equals("REQUIRE: SUBSET_K"))
 						{
 							sMsg = 16;
-						} else if (mMsg.trim().equals(
-								"REQUIRE: TRANSFER_RESPONSE"))
+						} else if (mMsg.trim().equals("REQUIRE: TRANSFER_RESPONSE"))
 						{
 							sMsg = 17;
 						} else
@@ -160,18 +164,22 @@ public class hwClient extends hwSuper implements Runnable
 									encrypted = true;
 								} else if (tokens[2].equals("LOCALHOST"))
 								{
-									System.out
-											.println("CLIENT--Validated host.");
+									System.out.println("CLIENT--Validated host.");
 									free = true;
 									sMsg = 5;
 								} else if (tokens[1].equals("PUBLIC_KEY"))
 								{
 								} else if (tokens[1].equals("ROUNDS"))
 								{
+									ROUNDS = Integer.parseInt(tokens[2]);
 								} else if (tokens[1].equals("AUTHORIZE_SET"))
 								{
 								} else if (tokens[1].equals("SUBSET_A"))
 								{
+									for(int i=2; i<2+ROUNDS; i++)
+									{
+										SUBSET_A.add(Integer.parseInt(tokens[i]));
+									}
 								} else if (tokens[1].equals("SUBSET_J"))
 								{
 								} else if (tokens[1].equals("SUBSET_K"))
@@ -341,14 +349,19 @@ public class hwClient extends hwSuper implements Runnable
 						}
 						break;
 					case 13:
+						String authcmd = "AUTHORIZE_SET";
+						for (int i=0; i<ROUNDS; i++)
+						{
+							authcmd = authcmd + " " + Integer.toString(random.nextInt(1024));
+						}
 						if (!encrypted)
 						{
 							System.out.println("CLIENT--AUTHORIZE_SET");
-							out.println("AUTHORIZE_SET 1 4 9 0 9 4 1");
+							out.println(authcmd);
 						} else
 						{
 							System.out.println("E>CLIENT--AUTHORIZE_SET");
-							out.println(kDE.encrypt("AUTHORIZE_SET 1 4 9 0 9 4 1"));
+							out.println(kDE.encrypt(authcmd));
 						}
 						break;
 					case 14:
