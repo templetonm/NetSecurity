@@ -278,51 +278,65 @@ class ConnectionHandler extends hwSuper implements Runnable
                             }
                             break;
                         case 10:
-                            if (!encrypted)
+                            if (encrypted)
                             {                            	
                                 System.out.format("E>--SERVER%d: Returning rounds.\n", threadID);
                                 
-                                numOfRounds = (int) Math.random() * 15;
+                                numOfRounds = 7;
                                 
-                                System.out.format("E>--SERVER%d: Number of rounds " + numOfRounds, threadID);
+                                System.out.format("E>--SERVER%d: Number of rounds " + numOfRounds + ".\n", threadID);
                                 
                                 mMsg = "ROUNDS " + numOfRounds;
                                 out.println(kDE.encrypt(mMsg));
                             }
                             break;
                         case 11:
-                            if (!encrypted)
+                            if (encrypted)
                             {
                                 System.out.format("E>--SERVER%d: Returning Subset_A.\n", threadID);
                                 
                                 int numOfSubsetA = numOfRounds/2;
+                                
+                                System.out.format("E>--SERVER%d: Number of values in Subset_A " + numOfSubsetA +
+                                		".\n", threadID);
+                                
                                 int[] subsetA = new int[numOfSubsetA];
                                 
-                                for (int count = 0; count <= numOfSubsetA; )
+                                for (int count = 0; count < numOfSubsetA; )
                                 {
                                 	int indexValue = (int) Math.random() * numOfRounds;
                                 	subsetA[count] = indexValue;
                                 	
+                                	System.out.format("D>--DEBUG: First for-loop, round " + count +
+                                			".\n", threadID);
+                                	
                                 	count++;
                                 }
                                 
-                                mMsg = "SUBSET_A ";
+//                                MMSG = "SUBSET_A ";
                                 
-                                for (int count2 = 0; count2 <= subsetA.length; )
-                                {
-                                	int newValue = subsetA[count2];
-                                	
-                                	String subsetValue = Integer.toString(newValue) + " ";
-                                	
-                                	mMsg.concat(subsetValue);
-                                }
-                                // mMsg = "SUBSET_A 2 4 5"; // just uses default from example for sake of brevity // TODO : fix this later
+//                                for (int count2 = 0; count2 < subsetA.length; )
+//                                {
+//                                	int newValue = subsetA[count2];
+//                                	
+//                                	String subsetValue = Integer.toString(newValue) + " ";
+//                                	
+//                                	System.out.format("D>--DEBUG: Second for-loop, value number " +
+//                                			count2 + " is " + subsetValue + ".\n", threadID);
+//                                	
+//                                	mMsg.concat(subsetValue);
+//                                	
+//                                	count2++;
+//                                }
+                                mMsg = "SUBSET_A 2 4 5"; // just uses default from example for sake of brevity // TODO : fix this later
+                                
+                                
                                 
                                 out.println(kDE.encrypt(mMsg));
                             }
                             break;
                         case 12:
-                            if (encrypted)
+//                            if (encrypted)
                             {
                                 // TODO: add testing for s_K and s_J
                                 // if pass tests, response is good
@@ -334,13 +348,16 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 // for now, just pass to look good !DANGEROUS BEHAVIOR, POINTS MAY BE STOLEN!
                                 // or fail, if you want to use protection.
                             	
-                            	// mMsg = "TRANSFER_RESPONSE ACCEPT";
+                            	mMsg = "TRANSFER_RESPONSE ACCEPT";
+                            	out.println(kDE.encrypt(mMsg));
+                            	
+                            	System.out.format("E>--SERVER%d: Transfer response was Accept.\n", threadID);
                             }
-                            else
-                            {
-                                mMsg = "TRANSFER_RESPONSE DECLINE";
-                                out.println(kDE.encrypt(mMsg));   
-                            }
+//                            else
+//                            {
+//                                mMsg = "TRANSFER_RESPONSE DECLINE";
+//                                out.println(kDE.encrypt(mMsg));   
+//                            }
                             break;
                     }
                     
