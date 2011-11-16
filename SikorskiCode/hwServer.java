@@ -139,9 +139,18 @@ class ConnectionHandler extends hwSuper implements Runnable
                             break;
                         }
                         
-                        if (mMsg.trim().equals("REQUIRE: IDENT"))
+                        if (mMsg.contains("COMMAND_ERROR:"))
                         {
-                            sMsg = 0;
+                        	/*
+                        	 * This needs to be tested/fixed if it doesn't hold true for all cases
+                        	 */
+                        	
+                        	waiting = true;
+                        	
+                        }
+                        else if (mMsg.trim().equals("REQUIRE: IDENT"))
+                        {
+                        	sMsg = 0;
                         }
                         else if (mMsg.trim().equals("REQUIRE: PASSWORD"))
                         {
@@ -195,6 +204,11 @@ class ConnectionHandler extends hwSuper implements Runnable
                                     // TODO: save authorize_set
                                     
                                     int lengthOfAuthorizeSet = tokens.length - 2; // this is just number of rounds, or should be at least.
+                                    
+                                	for (int count = 0; count < lengthOfAuthorizeSet; count++)
+                                	{
+                                		System.out.format("D>--Debug: Value is " + tokens [count + 2] + ".\n", threadID);
+                                	}
                                 } else if (tokens [1].equals("SUBSET_K"))
                                 {
                                     // save subset_k for testing
@@ -282,7 +296,9 @@ class ConnectionHandler extends hwSuper implements Runnable
                             {                            	
                                 System.out.format("E>--SERVER%d: Returning rounds.\n", threadID);
                                 
-                                numOfRounds = 7;
+                                Random numGenerator = new Random();
+                                
+                                numOfRounds = numGenerator.nextInt(15) + 1;
                                 
                                 System.out.format("E>--SERVER%d: Number of rounds " + numOfRounds + ".\n", threadID);
                                 
@@ -296,19 +312,72 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 System.out.format("E>--SERVER%d: Returning Subset_A.\n", threadID);
                                 
                                 int numOfSubsetA = numOfRounds/2;
+                                ArrayList<Integer> subsetA = new ArrayList<Integer>(numOfSubsetA);
+                                Random indexValueGenerator = new Random();
                                 
+                                mMsg = "SUBSET_A ";
+                                	
                                 System.out.format("E>--SERVER%d: Number of values in Subset_A " + numOfSubsetA +
                                 		".\n", threadID);
                                 
-                                int[] subsetA = new int[numOfSubsetA];
-                                
                                 for (int count = 0; count < numOfSubsetA; )
                                 {
-                                	int indexValue = (int) Math.random() * numOfRounds;
-                                	subsetA[count] = indexValue;
+                                	int indexValue = indexValueGenerator.nextInt(numOfRounds); // count;
+                                	subsetA.add(indexValue);
                                 	
-                                	System.out.format("D>--DEBUG: First for-loop, round " + count +
-                                			".\n", threadID);
+                                	System.out.format("D>--DEBUG: First for-loop, round " + count + " with value " +
+                                			indexValue + ".\n", threadID);
+                                	
+//                                	String value = Integer.toString(indexValue);
+//                                	
+//                                	if (count != (numOfSubsetA - 1))
+//                                	{
+//                                		value = value + " ";
+//                                		
+//                                		System.out.format("D>--DEBUG: Current value is " + value + ".\n", threadID);
+//                                		
+//                                		mMsg = mMsg.concat(value);
+//                                		System.out.format("D>--DEBUG: IF Current statement: " + mMsg + ".\n", threadID);
+//                                	}	
+//                                	else
+//                                	{
+//                                		mMsg = mMsg.concat(value);
+//                                		System.out.format("D>--DEBUG: ELSE Current statement: " + mMsg + ".\n", threadID);
+//                                	}
+                                	
+                                	count++;
+                                }
+                                
+                                HashSet<Integer> hs = new HashSet<Integer>();
+                                hs.addAll(subsetA);
+                                
+                                subsetA.clear();
+                                subsetA.addAll(hs);
+                                
+                                Collections.sort(subsetA);
+                                
+                                Object subsetArrayA[] = subsetA.toArray();
+                                
+                                for (int count = 0; count < subsetArrayA.length; )
+                                {
+                                	int arrayValue = (Integer) subsetArrayA[count];
+                                	
+                                	String value = Integer.toString(arrayValue);
+                                	
+                                	if (count != (numOfSubsetA - 1))
+                                	{
+                                		value = value + " ";
+                                		
+                                		System.out.format("D>--DEBUG: Current value is " + value + ".\n", threadID);
+                                		
+                                		mMsg = mMsg.concat(value);
+                                		System.out.format("D>--DEBUG: IF Current statement: " + mMsg + ".\n", threadID);
+                                	}
+                                	else
+                                	{
+                                		mMsg = mMsg.concat(value);
+                                		System.out.format("D>--DEBUG: ELSE Current statement: " + mMsg + ".\n", threadID);
+                                	}
                                 	
                                 	count++;
                                 }
@@ -328,9 +397,7 @@ class ConnectionHandler extends hwSuper implements Runnable
 //                                	
 //                                	count2++;
 //                                }
-                                mMsg = "SUBSET_A 2 4 5"; // just uses default from example for sake of brevity // TODO : fix this later
-                                
-                                
+                                // mMsg = "SUBSET_A 2 4 5"; // just uses default from example for sake of brevity // TODO : fix this later
                                 
                                 out.println(kDE.encrypt(mMsg));
                             }
