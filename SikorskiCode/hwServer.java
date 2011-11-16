@@ -278,7 +278,7 @@ class ConnectionHandler extends hwSuper implements Runnable
                             }
                             break;
                         case 10:
-                            if (encrypted)
+                            if (!encrypted)
                             {                            	
                                 System.out.format("E>--SERVER%d: Returning rounds.\n", threadID);
                                 
@@ -291,7 +291,7 @@ class ConnectionHandler extends hwSuper implements Runnable
                             }
                             break;
                         case 11:
-                            if (encrypted)
+                            if (!encrypted)
                             {
                                 System.out.format("E>--SERVER%d: Returning Subset_A.\n", threadID);
                                 
