@@ -326,6 +326,8 @@ class ConnectionHandler extends hwSuper implements Runnable
                             {
                                 // TODO: add testing for s_K and s_J
                                 // if pass tests, response is good
+                            	
+                            	
                                 
                                 // if fail, then not.
                                 
