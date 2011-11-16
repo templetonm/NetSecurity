@@ -279,12 +279,12 @@ class ConnectionHandler extends hwSuper implements Runnable
                             break;
                         case 10:
                             if (encrypted)
-                            {
-                            	// 
-                            	
+                            {                            	
                                 System.out.format("E>--SERVER%d: Returning rounds.\n", threadID);
                                 
                                 numOfRounds = (int) Math.random() * 15;
+                                
+                                System.out.format("E>--SERVER%d: Number of rounds " + numOfRounds, threadID);
                                 
                                 mMsg = "ROUNDS " + numOfRounds;
                                 out.println(kDE.encrypt(mMsg));
