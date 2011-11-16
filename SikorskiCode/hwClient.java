@@ -7,6 +7,10 @@ import java.math.*;
 
 public class hwClient extends hwSuper implements Runnable
 {
+	private Random random;
+	private hwRSA rsa;
+	private BigInteger N;
+	private BigInteger V;
 	private static String MONITOR_NAME;
 	private static int MONITOR_PORT;
 	private static String HOST_NAME;
@@ -56,6 +60,10 @@ public class hwClient extends hwSuper implements Runnable
 			thisIsClient = true;
 
 			dhe = new DiffieHellmanExchange("DHKey");
+			random = new Random();
+			rsa = new hwRSA(random);
+			N = rsa.n;
+			V = rsa.V;
 		} catch (Exception e)
 		{
 
@@ -133,7 +141,7 @@ public class hwClient extends hwSuper implements Runnable
 								{
 									// This is our cookie.
 									System.out
-											.println("Received cookie; saving.");
+											.println("CLIENT--Received cookie; saving.");
 									mMsg = tokens[2];
 									fcout = new PrintWriter(new FileWriter(
 											COOKIEFILE));
@@ -152,7 +160,8 @@ public class hwClient extends hwSuper implements Runnable
 									encrypted = true;
 								} else if (tokens[2].equals("LOCALHOST"))
 								{
-									System.out.println("Validated host.");
+									System.out
+											.println("CLIENT--Validated host.");
 									free = true;
 									sMsg = 5;
 								} else if (tokens[1].equals("PUBLIC_KEY"))
@@ -172,17 +181,6 @@ public class hwClient extends hwSuper implements Runnable
 									// In any other event, just let the user
 									// handle things – maybe they
 									// can find a way out!
-									free = true;
-								}
-							} else if (sMsg > 9)
-							{
-								switch (sMsg)
-								{
-								case 10:
-									// First response to auth
-								default:
-									// Oh god oh god, we're all going to die
-									sMsg = 5;
 									free = true;
 								}
 							}
@@ -211,12 +209,12 @@ public class hwClient extends hwSuper implements Runnable
 					case 0:
 						if (!encrypted)
 						{
-							System.out.println("Returning ident.");
+							System.out.println("CLIENT--Returning ident.");
 							out.println("IDENT " + IDENT + " "
 									+ dhe.x_pub.toString(32));
 						} else
 						{
-							System.out.println("E>Returning ident.");
+							System.out.println("E>CLIENT--Returning ident.");
 							String thisMessage = "IDENT " + IDENT + " "
 									+ dhe.x_pub.toString(32);
 							thisMessage = kDE.encrypt(thisMessage);
@@ -226,11 +224,11 @@ public class hwClient extends hwSuper implements Runnable
 					case 1:
 						if (!encrypted)
 						{
-							System.out.println("Returning password.");
+							System.out.println("CLIENT--Returning password.");
 							out.println("PASSWORD KNUT_WAS_A_BEAR");
 						} else
 						{
-							System.out.println("E>Returning password.");
+							System.out.println("E>CLIENT--Returning password.");
 							out.println(kDE.encrypt("PASSWORD KNUT_WAS_A_BEAR"));
 						}
 
@@ -238,20 +236,20 @@ public class hwClient extends hwSuper implements Runnable
 					case 2:
 						if (!encrypted)
 						{
-							System.out.println("Returning cookie.");
+							System.out.println("CLIENT--Returning cookie.");
 							fcin = new BufferedReader(
 									new FileReader(COOKIEFILE));
 							mMsg = fcin.readLine();
-							System.out.println("Cookie: " + mMsg);
+							System.out.println("CLIENT--Cookie: " + mMsg);
 							fcin.close();
 							out.println("ALIVE " + mMsg);
 						} else
 						{
-							System.out.println("E>Returning cookie.");
+							System.out.println("E>CLIENT--Returning cookie.");
 							fcin = new BufferedReader(
 									new FileReader(COOKIEFILE));
 							mMsg = fcin.readLine();
-							System.out.println("Cookie: " + mMsg);
+							System.out.println("CLIENT--Cookie: " + mMsg);
 							fcin.close();
 							mMsg = "ALIVE " + mMsg;
 							mMsg = kDE.encrypt(mMsg);
@@ -261,12 +259,13 @@ public class hwClient extends hwSuper implements Runnable
 					case 3:
 						if (!encrypted)
 						{
-							System.out.println("Returning host port.");
+							System.out.println("CLIENT--Returning host port.");
 							out.println("HOST_PORT " + HOST_NAME + " "
 									+ HOST_PORT);
 						} else
 						{
-							System.out.println("E>Returning host port.");
+							System.out
+									.println("E>CLIENT--Returning host port.");
 							mMsg = "HOST_PORT " + HOST_NAME + " " + HOST_PORT;
 							mMsg = kDE.encrypt(mMsg);
 							out.println(mMsg);
@@ -275,8 +274,9 @@ public class hwClient extends hwSuper implements Runnable
 					case 5:
 						if (!encrypted)
 						{
-							System.out.println("Sending commands!");
-							System.out.println("#Input client command:");
+							System.out.println("CLIENT--Sending commands!");
+							System.out
+									.println("CLIENT--#Input client command:");
 							mMsg = uin.readLine();
 							out.println(mMsg);
 						} else
@@ -292,8 +292,9 @@ public class hwClient extends hwSuper implements Runnable
 							// T_Rep for the sake of brevity,
 							// however.
 
-							System.out.println("E>Sending commands!");
-							System.out.println("E>#Input client command:");
+							System.out.println("E>CLIENT--Sending commands!");
+							System.out
+									.println("E>CLIENT--#Input client command:");
 							mMsg = uin.readLine();
 
 							// tokenize this to check for transfer; we unset
@@ -319,66 +320,75 @@ public class hwClient extends hwSuper implements Runnable
 						}
 						break;
 					case 11:
+						String keycmd = "PUBLIC_KEY "+V.toString()+" "+N.toString();
 						if (!encrypted)
 						{
-							System.out.println("PUBLIC_KEY");
+							System.out.println("CLIENT--PUBLIC_KEY");
+							out.println(keycmd);
 						} else
 						{
-							System.out.println("E>PUBLIC_KEY");
+							System.out.println("E>CLIENT--PUBLIC_KEY");
+							out.println(kDE.encrypt(keycmd));
 						}
 						break;
 					case 12:
 						if (!encrypted)
 						{
-							System.out.println("ROUNDS");
+							System.out.println("CLIENT--ROUNDS");
 						} else
 						{
-							System.out.println("E>ROUNDS");
+							System.out.println("E>CLIENT--ROUNDS");
 						}
 						break;
 					case 13:
 						if (!encrypted)
 						{
-							System.out.println("AUTHORIZE_SET");
+							System.out.println("CLIENT--AUTHORIZE_SET");
+							out.println("AUTHORIZE_SET 1 4 9 0 9 4 1");
 						} else
 						{
-							System.out.println("E>AUTHORIZE_SET");
+							System.out.println("E>CLIENT--AUTHORIZE_SET");
+							out.println(kDE.encrypt("AUTHORIZE_SET 1 4 9 0 9 4 1"));
 						}
 						break;
 					case 14:
 						if (!encrypted)
 						{
-							System.out.println("SUBSET_A");
+							System.out.println("CLIENT--SUBSET_A");
 						} else
 						{
-							System.out.println("E>SUBSET_A");
+							System.out.println("E>CLIENT--SUBSET_A");
 						}
 						break;
 					case 15:
 						if (!encrypted)
 						{
-							System.out.println("SUBSET_J");
+							System.out.println("CLIENT--SUBSET_J");
+							out.println("SUBSET_J 1 2 4 7");
 						} else
 						{
-							System.out.println("E>SUBSET_J");
+							System.out.println("E>CLIENT--SUBSET_J");
+							out.println(kDE.encrypt("SUBSET_J 1 2 4 7"));
 						}
 						break;
 					case 16:
 						if (!encrypted)
 						{
-							System.out.println("SUBSET_K");
+							System.out.println("CLIENT--SUBSET_K");
+							out.println("SUBSET_K 15 9 14");
 						} else
 						{
-							System.out.println("E>SUBSET_K");
+							System.out.println("E>CLIENT--SUBSET_K");
+							out.println(kDE.encrypt("SUBSET_K 15 9 14"));
 						}
 						break;
 					case 17:
 						if (!encrypted)
 						{
-							System.out.println("TRANSFER_RESPONSE");
+							System.out.println("CLIENT--TRANSFER_RESPONSE");
 						} else
 						{
-							System.out.println("E>TRANSFER_RESPONSE");
+							System.out.println("E>CLIENT--TRANSFER_RESPONSE");
 						}
 						break;
 					case -1:
