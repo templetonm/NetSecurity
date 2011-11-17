@@ -86,6 +86,14 @@ class ConnectionHandler extends hwSuper implements Runnable
     private BigInteger mV;
     private int lengthOfAuthorizeSet;
     private int numOfRounds;
+//    private ArrayList<BigInteger> authorizeSet;
+//    private ArrayList<BigInteger> subset_K;
+//    private ArrayList<BigInteger> subset_J;
+    private Object authorizeArray[];
+    private Object subsetArrayA[];
+    private Object subsetArrayB[];
+    private Object subsetArrayK[];
+    private Object subsetArrayJ[];
     
     // Authentication States
     // 10: First step of authentication
@@ -189,6 +197,7 @@ class ConnectionHandler extends hwSuper implements Runnable
                                     sPubKey = new BigInteger(mMsg, 32);
                                     
                                     // Compute the secret
+                                    
                                     Secret = dhe.computeSecret(sPubKey);
                                     kDE = new hwKarn(Secret);
                                     encrypted = true;
@@ -203,19 +212,62 @@ class ConnectionHandler extends hwSuper implements Runnable
                                     // YES, this is how we continue the check that the initiator knows s, I think.
                                     // TODO: save authorize_set
                                     
-                                    int lengthOfAuthorizeSet = tokens.length - 2; // this is just number of rounds, or should be at least.
-                                    
+                                	int lengthOfAuthorizeSet = tokens.length - 2; // this is just number of rounds, or should be at least.
+                                    ArrayList<BigInteger> authorizeSet = new ArrayList<BigInteger>();
+                                	
                                 	for (int count = 0; count < lengthOfAuthorizeSet; count++)
                                 	{
                                 		System.out.format("D>--Debug: Value is " + tokens [count + 2] + ".\n", threadID);
+                                		
+                                		BigInteger value = new BigInteger(tokens [count + 2]);
+                                		
+                                		authorizeSet.add(value);
                                 	}
+                                	
+                                	authorizeArray = authorizeSet.toArray();
+                                	
                                 } else if (tokens [1].equals("SUBSET_K"))
                                 {
+                                	int lengthOfSubsetK = tokens.length - 2;
+                                	ArrayList<BigInteger> subset_K = new ArrayList<BigInteger>(lengthOfSubsetK);
+                                	
+                                	for (int count = 0; count < lengthOfSubsetK; )
+                                	{
+                                		System.out.format("D>--Debug: Subset K value is " + tokens [count + 2] + ".\n", threadID);
+                                		
+                                		BigInteger value = new BigInteger(tokens [count + 2]); // Integer.parseInt(tokens [count +2]);
+                                		
+                                		subset_K.add(value);
+                                		
+                                		count++;
+                                	}
+                                	
+                                	subsetArrayK = subset_K.toArray();
+                                	
                                     // save subset_k for testing
                                     
                                 } else if (tokens [1].equals("SUBSET_J"))
                                 {
+                                	System.out.format("D>--Debug: This branch is entered.\n", threadID);
+                                	
+                                	int lengthOfSubsetJ = tokens.length - 2;
+                                	ArrayList<BigInteger> subset_J = new ArrayList<BigInteger>(lengthOfSubsetJ);
+                                	
+                                	for (int count = 0; count < lengthOfSubsetJ; )
+                                	{
+                                		System.out.format("D>--Debug: Subset J value is " + tokens [count + 2] + ".\n", threadID);
+                                		
+                                		BigInteger value = new BigInteger(tokens [count + 2]);
+                                		
+                                		subset_J.add(value);
+                                		
+                                		count++;
+                                	}
+                                	
+                                	subsetArrayJ = subset_J.toArray();
+                                	
                                     // save subset_j for testing
+                                	
                                 }
                             }
                             else if (tokens[0].equals("TRANSFER:"))
@@ -313,6 +365,14 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 
                                 int numOfSubsetA = numOfRounds/2;
                                 ArrayList<Integer> subsetA = new ArrayList<Integer>(numOfSubsetA);
+                                
+                                ArrayList<Integer> subsetB = new ArrayList<Integer>(numOfRounds);
+                                for (int count = 0; count < numOfRounds; )
+                                {
+                                	subsetB.add(count);
+                                	count++;
+                                }
+                                
                                 Random indexValueGenerator = new Random();
                                 
                                 mMsg = "SUBSET_A ";
@@ -351,12 +411,29 @@ class ConnectionHandler extends hwSuper implements Runnable
                                 HashSet<Integer> hs = new HashSet<Integer>();
                                 hs.addAll(subsetA);
                                 
+                                for (int count = 0; count < numOfSubsetA; )
+                                {
+                                	if (subsetB.contains(subsetA.get(count)))
+                                	{
+                                		subsetB.remove(subsetA.get(count));
+                                		count++;
+                                	}
+                                	else
+                                	{
+                                		count++;
+                                	}
+                                }
+                                
+                                Collections.sort(subsetB);
+                                
+                                subsetArrayB = subsetB.toArray();
+                                
                                 subsetA.clear();
                                 subsetA.addAll(hs);
                                 
                                 Collections.sort(subsetA);
                                 
-                                Object subsetArrayA[] = subsetA.toArray();
+                                subsetArrayA = subsetA.toArray();
                                 
                                 for (int count = 0; count < subsetArrayA.length; )
                                 {
@@ -403,28 +480,94 @@ class ConnectionHandler extends hwSuper implements Runnable
                             }
                             break;
                         case 12:
-//                            if (encrypted)
+                            if (encrypted)
                             {
                                 // TODO: add testing for s_K and s_J
                                 // if pass tests, response is good
                             	
+                            	ArrayList<BigInteger> testSubset_K = new ArrayList<BigInteger>();
+                            	                          	
+                            	for (int count = 0; count < subsetArrayK.length; count++)
+                            	{
                             	
+                            		BigInteger kValue = (BigInteger) subsetArrayK[count];
+                            		
+                            		kValue = kValue.pow(2).mod(mN);
+                            		
+                            		testSubset_K.add(kValue);
+                            		
+                            	}
+                            	
+                            	for (int count = 0; count < subsetArrayK.length; count++)
+                            	{
+                            		if (count != (subsetArrayK.length - 1))
+                            		{
+                            			if (testSubset_K.get(count) == 
+                            					(((mV).multiply(((BigInteger) authorizeArray[(Integer) subsetArrayA[count]]).pow(2))).mod(mN)))
+                            			{
+                            				count++;
+                            			}
+                            			else
+                            			{
+                            				System.out.format("D>--Debug: K value does not match.\n", threadID);
+                            				
+                            				mMsg = "TRANSFER_RESPONSE DECLINE";
+                            				out.println(kDE.encrypt(mMsg));
+                            				
+                            				break;
+                            			}
+                            		}
+                            	}
                                 
+                            	ArrayList<BigInteger> testSubset_J = new ArrayList<BigInteger>();
+                            	
+                            	for (int count = 0; count < subsetArrayJ.length; count++)
+                            	{
+                            		
+                            		BigInteger jValue = (BigInteger) subsetArrayJ[count];
+                            		
+                            		jValue = jValue.pow(2).mod(mN);
+                            		
+                            		testSubset_J.add(jValue);
+                            		
+                            	}
+                            	
+                            	for (int count = 0; count < subsetArrayJ.length; count++)
+                            	{
+                            		if (count != (subsetArrayJ.length - 1))
+                            		{
+                            			if (testSubset_J.get(count) == authorizeArray[(Integer) subsetArrayB[count]])
+                            			{
+                            				count++;
+                            			}
+                            			else
+                            			{
+                            				System.out.format("D>--Debug: J value does not match.\n", threadID);
+                            				
+                            				mMsg = "TRANSFER_RESPONSE DECLINE";
+                            				out.println(kDE.encrypt(mMsg));
+                            				
+                            				break;
+                            			}
+                            		}
+                            	}
+                            	
                                 // if fail, then not.
                                 
                                 // for now, just pass to look good !DANGEROUS BEHAVIOR, POINTS MAY BE STOLEN!
                                 // or fail, if you want to use protection.
+                            	
                             	
                             	mMsg = "TRANSFER_RESPONSE ACCEPT";
                             	out.println(kDE.encrypt(mMsg));
                             	
                             	System.out.format("E>--SERVER%d: Transfer response was Accept.\n", threadID);
                             }
-//                            else
-//                            {
-//                                mMsg = "TRANSFER_RESPONSE DECLINE";
-//                                out.println(kDE.encrypt(mMsg));   
-//                            }
+                            else
+                            {
+                                mMsg = "TRANSFER_RESPONSE DECLINE";
+                                out.println(kDE.encrypt(mMsg));   
+                            }
                             break;
                     }
                     
