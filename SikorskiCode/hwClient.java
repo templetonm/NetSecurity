@@ -11,7 +11,11 @@ public class hwClient extends hwSuper implements Runnable
 	private hwRSA rsa;
 	private BigInteger N;
 	private BigInteger V;
+	private BigInteger S;
 	private int ROUNDS;
+	private BigInteger[] SUBSET_K;
+	private BigInteger[] SUBSET_J;
+	private ArrayList<BigInteger> AUTHORIZE_SET = new ArrayList<BigInteger>();
 	private ArrayList<Integer> SUBSET_A = new ArrayList<Integer>();
 	private static String MONITOR_NAME;
 	private static int MONITOR_PORT;
@@ -66,6 +70,7 @@ public class hwClient extends hwSuper implements Runnable
 			rsa = new hwRSA(random);
 			N = rsa.n;
 			V = rsa.V;
+			S = rsa.S;
 		} catch (Exception e)
 		{
 
@@ -131,14 +136,16 @@ public class hwClient extends hwSuper implements Runnable
 						} else if (mMsg.trim().equals("REQUIRE: SUBSET_K"))
 						{
 							sMsg = 16;
-						} else if (mMsg.trim().equals("REQUIRE: TRANSFER_RESPONSE"))
+						} else if (mMsg.trim().equals(
+								"REQUIRE: TRANSFER_RESPONSE"))
 						{
 							sMsg = 17;
 						} else
 						{
 							String[] tokens = mMsg.split(" ");
 
-							if (tokens[0].equals("RESULT:"))
+							if (tokens.length != 0
+									&& tokens[0].equals("RESULT:"))
 							{
 								// Add check of hostport as well?
 								if (tokens[1].equals("PASSWORD"))
@@ -164,7 +171,8 @@ public class hwClient extends hwSuper implements Runnable
 									encrypted = true;
 								} else if (tokens[2].equals("LOCALHOST"))
 								{
-									System.out.println("CLIENT--Validated host.");
+									System.out
+											.println("CLIENT--Validated host.");
 									free = true;
 									sMsg = 5;
 								} else if (tokens[1].equals("PUBLIC_KEY"))
@@ -176,9 +184,11 @@ public class hwClient extends hwSuper implements Runnable
 								{
 								} else if (tokens[1].equals("SUBSET_A"))
 								{
-									for(int i=2; i<2+ROUNDS; i++)
+									SUBSET_A.clear();
+									for (int i = 2; i < 2 + ROUNDS; i++)
 									{
-										SUBSET_A.add(Integer.parseInt(tokens[i]));
+										SUBSET_A.add(Integer
+												.parseInt(tokens[i]));
 									}
 								} else if (tokens[1].equals("SUBSET_J"))
 								{
@@ -328,7 +338,8 @@ public class hwClient extends hwSuper implements Runnable
 						}
 						break;
 					case 11:
-						String keycmd = "PUBLIC_KEY "+V.toString()+" "+N.toString();
+						String keycmd = "PUBLIC_KEY " + V.toString() + " "
+								+ N.toString();
 						if (!encrypted)
 						{
 							System.out.println("CLIENT--PUBLIC_KEY");
@@ -350,9 +361,13 @@ public class hwClient extends hwSuper implements Runnable
 						break;
 					case 13:
 						String authcmd = "AUTHORIZE_SET";
-						for (int i=0; i<ROUNDS; i++)
+						AUTHORIZE_SET.clear();
+						for (int i = 0; i < ROUNDS; i++)
 						{
-							authcmd = authcmd + " " + Integer.toString(random.nextInt(1024));
+							BigInteger j;
+							j = BigInteger.valueOf(random.nextInt(1024));
+							AUTHORIZE_SET.add(j);
+							authcmd = authcmd + " " + String.valueOf(j);
 						}
 						if (!encrypted)
 						{
@@ -374,25 +389,54 @@ public class hwClient extends hwSuper implements Runnable
 						}
 						break;
 					case 15:
+						String subjcmd = "SUBSET_J";
+						int j = 0;
+						int k = 0;
+						SUBSET_J = new BigInteger[ROUNDS - SUBSET_A.size()];
+						for (int i = 0; i < ROUNDS; i++)
+						{
+							if (SUBSET_A.get(j) == i)
+							{
+								j++;
+							} else
+							{
+								SUBSET_J[k] = AUTHORIZE_SET.get(i).mod(N);
+								k++;
+							}
+						}
+						for (int i = 0; i < ROUNDS - SUBSET_A.size(); i++)
+						{
+							subjcmd = subjcmd + " " + SUBSET_J[i];
+						}
 						if (!encrypted)
 						{
 							System.out.println("CLIENT--SUBSET_J");
-							out.println("SUBSET_J 1 2 4 7");
+							out.println(subjcmd);
 						} else
 						{
 							System.out.println("E>CLIENT--SUBSET_J");
-							out.println(kDE.encrypt("SUBSET_J 1 2 4 7"));
+							out.println(kDE.encrypt(subjcmd));
 						}
 						break;
 					case 16:
+						String subkcmd = "SUBSET_K";
+						BigInteger b;
+						SUBSET_K = new BigInteger[SUBSET_A.size()];
+						for (int i = 0; i < SUBSET_A.size(); i++)
+						{
+							b = (S.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i)))
+									.mod(N));
+							SUBSET_K[i] = b;
+							subkcmd = subkcmd + " " + b;
+						}
 						if (!encrypted)
 						{
 							System.out.println("CLIENT--SUBSET_K");
-							out.println("SUBSET_K 15 9 14");
+							out.println(subkcmd);
 						} else
 						{
 							System.out.println("E>CLIENT--SUBSET_K");
-							out.println(kDE.encrypt("SUBSET_K 15 9 14"));
+							out.println(kDE.encrypt(subkcmd));
 						}
 						break;
 					case 17:
