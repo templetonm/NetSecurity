@@ -342,11 +342,11 @@ public class hwClient extends hwSuper implements Runnable
 								+ N.toString();
 						if (!encrypted)
 						{
-							System.out.println("CLIENT--PUBLIC_KEY");
+							System.out.println("CLIENT--"+keycmd);
 							out.println(keycmd);
 						} else
 						{
-							System.out.println("E>CLIENT--PUBLIC_KEY");
+							System.out.println("E>CLIENT--"+keycmd);
 							out.println(kDE.encrypt(keycmd));
 						}
 						break;
@@ -371,11 +371,11 @@ public class hwClient extends hwSuper implements Runnable
 						}
 						if (!encrypted)
 						{
-							System.out.println("CLIENT--AUTHORIZE_SET");
+							System.out.println("CLIENT--"+authcmd);
 							out.println(authcmd);
 						} else
 						{
-							System.out.println("E>CLIENT--AUTHORIZE_SET");
+							System.out.println("E>CLIENT--"+authcmd);
 							out.println(kDE.encrypt(authcmd));
 						}
 						break;
@@ -410,11 +410,11 @@ public class hwClient extends hwSuper implements Runnable
 						}
 						if (!encrypted)
 						{
-							System.out.println("CLIENT--SUBSET_J");
+							System.out.println("CLIENT--"+subjcmd);
 							out.println(subjcmd);
 						} else
 						{
-							System.out.println("E>CLIENT--SUBSET_J");
+							System.out.println("E>CLIENT--"+subjcmd);
 							out.println(kDE.encrypt(subjcmd));
 						}
 						break;
@@ -431,11 +431,11 @@ public class hwClient extends hwSuper implements Runnable
 						}
 						if (!encrypted)
 						{
-							System.out.println("CLIENT--SUBSET_K");
+							System.out.println("CLIENT--"+subkcmd);
 							out.println(subkcmd);
 						} else
 						{
-							System.out.println("E>CLIENT--SUBSET_K");
+							System.out.println("E>CLIENT--"+subkcmd);
 							out.println(kDE.encrypt(subkcmd));
 						}
 						break;
