@@ -200,10 +200,11 @@ public class Karn
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		int i = 0;
 
-		while (input[i] != 0 && i < input.length)
+		while (input[i] != 0)
 		{
 			buffer.write(input[i]);
 			i++;
+			if (i >= input.length) break;
 		}
 
 		return (new String(buffer.toByteArray()));

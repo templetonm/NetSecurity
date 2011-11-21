@@ -11,17 +11,14 @@ import java.math.BigInteger;
  */
 public class DHKey implements Serializable
 {
-	/**
-	 * Generated key so that Eclipse would stop complaining about serializability
-	 */
-	private static final long serialVersionUID = 9117362919973259351L;
+	private static final long serialVersionUID = -687853035510710019L;
 
 	BigInteger p, g; /* These two make up the public Key */
 
 	String Description;
 	Date created;
 
-	DHKey(BigInteger P, BigInteger G, String what)
+    DHKey (BigInteger P, BigInteger G, String what)
 	{
 		p = P;
 		g = G;

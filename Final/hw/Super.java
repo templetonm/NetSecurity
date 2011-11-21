@@ -18,10 +18,10 @@ public class Super
 
 	Thread runner = null;
 
-	DHExchange dhe = null;
-	BigInteger sPubKey = null;
-	BigInteger Secret = null;
-	Karn kDE = null; // karn decryption encryption
+	protected DHExchange dhe = null;
+	protected BigInteger sPubKey = null;
+	protected BigInteger Secret = null;
+	protected Karn kDE = null; // karn decryption encryption
 
 	int sMsg = -1;
 	String mMsg = "";
@@ -35,6 +35,7 @@ public class Super
 			msg = in.readLine();
 		} catch (Exception e)
 		{
+			e.printStackTrace();
 		}
 
 		if (!(msg == null) && !msg.trim().equals(""))
@@ -45,9 +46,6 @@ public class Super
 				msg = kDE.decrypt(msg);
 				System.out.print("E>");
 			}
-			System.out.println("Public: "+String.valueOf(sPubKey));
-			System.out.println("Secret: "+String.valueOf(Secret));
-			System.out.println("Karn: "+String.valueOf(kDE));
 
 			// Output message to screen so we know what's going on.
 			if (isClient)

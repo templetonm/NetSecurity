@@ -61,7 +61,12 @@ public class Client extends Super implements Runnable
 			IDENT = id;
 			thisIsClient = true;
 
-			dhe = new DHExchange("DHKey");
+			try {
+				dhe = new DHExchange("DHKey");
+			} catch (Exception e) {
+				System.out.println(String.valueOf(dhe));
+				e.printStackTrace();
+			}
 			random = new Random();
 			rsa = new RSA(random);
 			N = rsa.n;
@@ -147,7 +152,6 @@ public class Client extends Super implements Runnable
 									// This is the serverPubKey.
 									mMsg = tokens[2];
 									sPubKey = new BigInteger(mMsg, 32);
-
 									// Compute the secret
 									Secret = dhe.computeSecret(sPubKey);
 									kDE = new Karn(Secret);
@@ -198,7 +202,7 @@ public class Client extends Super implements Runnable
 					switch (sMsg)
 					{
 					case 0:
-						String identmsg = "IDENT " + IDENT + " " + String.valueOf(dhe.getPublicKey());
+						String identmsg = "IDENT " + IDENT + " " + dhe.getPublicKey().toString(32);
 						if (!encrypted)
 						{
 							System.out.println("CLIENT>>>:Returning ident... " + identmsg);
@@ -396,6 +400,7 @@ public class Client extends Super implements Runnable
 				}
 			} catch (Exception e)
 			{
+				e.printStackTrace();
 			}
 		}
 	}
