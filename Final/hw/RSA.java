@@ -37,7 +37,8 @@ public class RSA
 
 		S = getPrime(random); // s is an arbitrary secret; we'll use a prime
 								// because they're BA!!!
-		V = (S.multiply(S)).mod(n);
+		V = S.modPow(new BigInteger("2"), n);
+		//V = (S.multiply(S)).mod(n);
 	}
 
 	public void initialize(Random random)

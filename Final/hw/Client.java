@@ -5,17 +5,17 @@ import java.net.*;
 import java.util.*;
 import java.math.*;
 
-public class Client extends Super implements Runnable
-{
+public class Client extends Super implements Runnable {
 	private Random random;
 	private RSA rsa;
 	private BigInteger N;
 	private BigInteger V;
 	private BigInteger S;
 	private int ROUNDS;
-	private BigInteger[] SUBSET_K;
-	private BigInteger[] SUBSET_J;
 	private ArrayList<BigInteger> AUTHORIZE_SET = new ArrayList<BigInteger>();
+	private ArrayList<BigInteger> SUBSET_S = new ArrayList<BigInteger>();
+	private ArrayList<BigInteger> SUBSET_K = new ArrayList<BigInteger>();
+	private ArrayList<BigInteger> SUBSET_J = new ArrayList<BigInteger>();
 	private ArrayList<Integer> SUBSET_A = new ArrayList<Integer>();
 	private static String MONITOR_NAME;
 	private static int MONITOR_PORT;
@@ -46,17 +46,17 @@ public class Client extends Super implements Runnable
 	// 13: SUBSET_J
 	// 14: SUBSET_K
 
-	public Client(String id, String monitor_name, int monitor_port, String host_name, int host_port)
-	{
-		try
-		{
+	public Client(String id, String monitor_name, int monitor_port,
+			String host_name, int host_port) {
+		try {
 			MONITOR_NAME = monitor_name;
 			MONITOR_PORT = monitor_port;
 			HOST_NAME = host_name;
 			HOST_PORT = host_port;
 			mySocket = new Socket(MONITOR_NAME, MONITOR_PORT);
 			out = new PrintWriter(mySocket.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(mySocket.getInputStream()));
+			in = new BufferedReader(new InputStreamReader(
+					mySocket.getInputStream()));
 			uin = new BufferedReader(new InputStreamReader(System.in));
 			IDENT = id;
 			thisIsClient = true;
@@ -72,83 +72,65 @@ public class Client extends Super implements Runnable
 			N = rsa.n;
 			V = rsa.V;
 			S = rsa.S;
-		} catch (Exception e)
-		{
+		} catch (Exception e) {
 
 		}
 	}
 
-	public void start()
-	{
-		if (runner == null)
-		{
+	public void start() {
+		if (runner == null) {
 			runner = new Thread(this);
 			runner.start();
 		}
 	}
 
-	public void run()
-	{
-		while (Thread.currentThread() == runner)
-		{
-			try
-			{
+	public void run() {
+		while (Thread.currentThread() == runner) {
+			try {
 				boolean free = false;
 
-				while (!done)
-				{
+				while (!done) {
 					waiting = false;
 
-					while (!waiting)
-					{
+					while (!waiting) {
 						// 0 passed for threadID because it hasn't got one.
 						mMsg = GetMonitorMessage(encrypted, thisIsClient, 0);
 
-						if (mMsg.contains("COMMAND_ERROR:"))
-						{
+						if (mMsg.contains("COMMAND_ERROR:")) {
 							free = true;
-						} else if (mMsg.contains("REQUIRE: IDENT"))
-						{
+						} else if (mMsg.contains("REQUIRE: IDENT")) {
 							sMsg = 0;
-						} else if (mMsg.contains("REQUIRE: PASSWORD"))
-						{
+						} else if (mMsg.contains("REQUIRE: PASSWORD")) {
 							sMsg = 1;
-						} else if (mMsg.contains("REQUIRE: ALIVE"))
-						{
+						} else if (mMsg.contains("REQUIRE: ALIVE")) {
 							sMsg = 2;
-						} else if (mMsg.contains("REQUIRE: HOST_PORT"))
-						{
+						} else if (mMsg.contains("REQUIRE: HOST_PORT")) {
 							sMsg = 3;
-						} else if (mMsg.contains("REQUIRE: PUBLIC_KEY"))
-						{
+						} else if (mMsg.contains("REQUIRE: PUBLIC_KEY")) {
 							sMsg = 11;
-						} else if (mMsg.contains("REQUIRE: AUTHORIZE_SET"))
-						{
+						} else if (mMsg.contains("REQUIRE: AUTHORIZE_SET")) {
 							sMsg = 12;
-						} else if (mMsg.contains("REQUIRE: SUBSET_J"))
-						{
+						} else if (mMsg.contains("REQUIRE: SUBSET_J")) {
 							sMsg = 13;
-						} else if (mMsg.contains("REQUIRE: SUBSET_K"))
-						{
+						} else if (mMsg.contains("REQUIRE: SUBSET_K")) {
 							sMsg = 14;
-						} else
-						{
+						} else {
 							String[] tokens = mMsg.split(" ");
 
-							if (tokens.length != 0 && tokens[0].equals("RESULT:"))
-							{
+							if (tokens.length != 0
+									&& tokens[0].equals("RESULT:")) {
 								// Add check of hostport as well?
-								if (tokens[1].equals("PASSWORD"))
-								{
+								if (tokens[1].equals("PASSWORD")) {
 									// This is our cookie.
-									System.out.println("CLIENT>>>:Received cookie; saving.");
+									System.out
+											.println("CLIENT>>>:Received cookie; saving.");
 									mMsg = tokens[2];
-									fcout = new PrintWriter(new FileWriter(COOKIEFILE));
+									fcout = new PrintWriter(new FileWriter(
+											COOKIEFILE));
 									fcout.flush();
 									fcout.println(mMsg);
 									fcout.close();
-								} else if (tokens[1].equals("IDENT"))
-								{
+								} else if (tokens[1].equals("IDENT")) {
 									// This is the serverPubKey.
 									mMsg = tokens[2];
 									sPubKey = new BigInteger(mMsg, 32);
@@ -156,23 +138,28 @@ public class Client extends Super implements Runnable
 									Secret = dhe.computeSecret(sPubKey);
 									kDE = new Karn(Secret);
 									encrypted = true;
-								} else if (tokens[2].equals("LOCALHOST"))
-								{
-									System.out.println("CLIENT>>>:Validated host.");
+								} else if (tokens[2].equals("LOCALHOST")) {
+									System.out
+											.println("CLIENT>>>:Validated host.");
 									free = true;
 									sMsg = 5;
-								} else if (tokens[1].equals("ROUNDS"))
-								{
+								} else if (tokens[1].equals("ROUNDS")) {
 									ROUNDS = Integer.parseInt(tokens[2]);
-								} else if (tokens[1].equals("SUBSET_A"))
-								{
+								} else if (tokens[1].equals("SUBSET_A")) {
 									SUBSET_A.clear();
-									for (int i = 2; i < 2 + ROUNDS; i++)
-									{
-										SUBSET_A.add(Integer.parseInt(tokens[i]));
+									// First value starts at index 2
+									int i = 2;
+									while (true) {
+										try {
+											SUBSET_A.add(Integer
+													.parseInt(tokens[i]));
+											i++;
+										} catch (Exception e) {
+											// SUBSET_A Filled
+											break;
+										}
 									}
-								} else
-								{
+								} else {
 									// In any other event, just let the user
 									// handle things – maybe they
 									// can find a way out!
@@ -183,61 +170,59 @@ public class Client extends Super implements Runnable
 
 						// Save cookie here.
 
-						if (free)
-						{
+						if (free) {
 							// Free never unsets; I'm not familiar with a
 							// circumstance that would require or benefit from
 							// it.
 							sMsg = 5;
 						}
 
-						if (mMsg.trim().equals("WAITING:"))
-						{
+						if (mMsg.trim().equals("WAITING:")) {
 							waiting = true;
 						}
 					}
 
-					// System.out.format("State: %d\n", sMsg);
+					// TODO: Remove non encrypted where necessary
 
-					switch (sMsg)
-					{
+					switch (sMsg) {
 					case 0:
-						String identmsg = "IDENT " + IDENT + " " + dhe.getPublicKey().toString(32);
-						if (!encrypted)
-						{
-							System.out.println("CLIENT>>>:Returning ident... " + identmsg);
+						String identmsg = "IDENT " + IDENT + " "
+								+ dhe.getPublicKey().toString(32);
+						if (!encrypted) {
+							System.out.println("CLIENT>>>:Returning ident... "
+									+ identmsg);
 							out.println(identmsg);
-						} else
-						{
-							System.out.println("E>CLIENT>>>:Returning ident... " + identmsg);
+						} else {
+							System.out
+									.println("E>CLIENT>>>:Returning ident... "
+											+ identmsg);
 							out.println(kDE.encrypt(identmsg));
 						}
 						break;
 					case 1:
-						if (!encrypted)
-						{
+						if (!encrypted) {
 							System.out.println("CLIENT>>>:Returning password.");
 							out.println("PASSWORD KNUT_WAS_A_BEAR");
-						} else
-						{
-							System.out.println("E>CLIENT>>>:Returning password.");
+						} else {
+							System.out
+									.println("E>CLIENT>>>:Returning password.");
 							out.println(kDE.encrypt("PASSWORD KNUT_WAS_A_BEAR"));
 						}
 
 						break;
 					case 2:
-						if (!encrypted)
-						{
+						if (!encrypted) {
 							System.out.println("CLIENT>>>:Returning cookie.");
-							fcin = new BufferedReader(new FileReader(COOKIEFILE));
+							fcin = new BufferedReader(
+									new FileReader(COOKIEFILE));
 							mMsg = fcin.readLine();
 							System.out.println("CLIENT>>>:Cookie: " + mMsg);
 							fcin.close();
 							out.println("ALIVE " + mMsg);
-						} else
-						{
+						} else {
 							System.out.println("E>CLIENT>>>:Returning cookie.");
-							fcin = new BufferedReader(new FileReader(COOKIEFILE));
+							fcin = new BufferedReader(
+									new FileReader(COOKIEFILE));
 							mMsg = fcin.readLine();
 							System.out.println("CLIENT>>>:Cookie: " + mMsg);
 							fcin.close();
@@ -247,28 +232,30 @@ public class Client extends Super implements Runnable
 						}
 						break;
 					case 3:
-						if (!encrypted)
-						{
-							System.out.println("CLIENT>>>:Returning host port.");
-							out.println("HOST_PORT " + HOST_NAME + " " + HOST_PORT);
-						} else
-						{
-							System.out.println("E>CLIENT>>>:Returning host port.");
+						// HOST_PORT
+						if (!encrypted) {
+							System.out
+									.println("CLIENT>>>:Returning host port.");
+							out.println("HOST_PORT " + HOST_NAME + " "
+									+ HOST_PORT);
+						} else {
+							System.out
+									.println("E>CLIENT>>>:Returning host port.");
 							mMsg = "HOST_PORT " + HOST_NAME + " " + HOST_PORT;
 							mMsg = kDE.encrypt(mMsg);
 							out.println(mMsg);
 						}
 						break;
 					case 5:
+						// user input
 						String inputcmd = "CLIENT>>>:Input client command:";
-						if (!encrypted)
-						{
+
+						if (!encrypted) {
 							System.out.println("CLIENT>>>:Sending commands!");
 							System.out.println(inputcmd);
 							mMsg = uin.readLine();
 							out.println(mMsg);
-						} else
-						{
+						} else {
 							// This is where we can send
 							// "TRANSFER_REQUEST ARG1 ARG2 FROM ARG2".
 							// I wouldn't automate this.
@@ -290,8 +277,7 @@ public class Client extends Super implements Runnable
 							if (tokens.length == 5) // Hopefully a transfer
 													// request
 							{
-								if (tokens[0].equals("TRANSFER_REQUEST"))
-								{
+								if (tokens[0].equals("TRANSFER_REQUEST")) {
 									/*
 									 * Recipient = tokens[1]; Amount =
 									 * Integer.parseInt(tokens[2]); Sender =
@@ -309,13 +295,12 @@ public class Client extends Super implements Runnable
 						}
 						break;
 					case 11:
-						String keycmd = "PUBLIC_KEY " + V.toString() + " " + N.toString();
-						if (!encrypted)
-						{
+						String keycmd = "PUBLIC_KEY " + V.toString() + " "
+								+ N.toString();
+						if (!encrypted) {
 							System.out.println("CLIENT>>>:" + keycmd);
 							out.println(keycmd);
-						} else
-						{
+						} else {
 							System.out.println("E>CLIENT>>>:" + keycmd);
 							out.println(kDE.encrypt(keycmd));
 						}
@@ -323,74 +308,59 @@ public class Client extends Super implements Runnable
 					case 12:
 						String authcmd = "AUTHORIZE_SET";
 						AUTHORIZE_SET.clear();
-						for (int i = 0; i < ROUNDS; i++)
-						{
-							BigInteger j;
-							j = BigInteger.valueOf(random.nextInt(1024));
-							AUTHORIZE_SET.add(j);
-							authcmd = authcmd + " " + String.valueOf(j);
+						SUBSET_S.clear();
+						BigInteger j, k;
+						
+						for (int i = 0; i < ROUNDS; i++) {
+							j = new BigInteger(String.valueOf(random.nextInt()));
+							SUBSET_S.add(j);
+							k = j.modPow(new BigInteger("2"),N);
+							AUTHORIZE_SET.add(k);
+							authcmd = authcmd + " " + k.toString();
 						}
-						if (!encrypted)
-						{
+						if (!encrypted) {
 							System.out.println("CLIENT>>>:" + authcmd);
 							out.println(authcmd);
-						} else
-						{
+						} else {
 							System.out.println("E>CLIENT>>>:" + authcmd);
 							out.println(kDE.encrypt(authcmd));
 						}
 						break;
 					case 13:
 						String subjcmd = "SUBSET_J";
-						int j = 0;
-						int k = 0;
-						SUBSET_J = new BigInteger[ROUNDS - SUBSET_A.size()];
-						for (int i = 0; i < ROUNDS; i++)
-						{
-							/*
-							 * Since the indexes in subset A are in order we can
-							 * simply skip them once found otherwise mod it with
-							 * public key N and add it to subset J
-							 */
-							if (SUBSET_A.get(j) == i)
-							{
-								j++;
-							} else
-							{
-								SUBSET_J[k] = AUTHORIZE_SET.get(i).mod(N);
-								k++;
+						SUBSET_J.clear();
+						BigInteger b;
+						int a = 0;
+						for (int i = 0; i < ROUNDS; i++) {
+							if (a < SUBSET_A.size() && SUBSET_A.get(a) == i) {
+								a++;
+							} else {
+								b = SUBSET_S.get(i).mod(N);
+								SUBSET_J.add(b);
+								subjcmd = subjcmd + " " + b;
 							}
 						}
-						for (int i = 0; i < k; i++)
-						{
-							subjcmd = subjcmd + " " + SUBSET_J[i];
-						}
-						if (!encrypted)
-						{
+						if (!encrypted) {
 							System.out.println("CLIENT>>>:" + subjcmd);
 							out.println(subjcmd);
-						} else
-						{
+						} else {
 							System.out.println("E>CLIENT>>>:" + subjcmd);
 							out.println(kDE.encrypt(subjcmd));
 						}
 						break;
 					case 14:
 						String subkcmd = "SUBSET_K";
-						BigInteger b;
-						SUBSET_K = new BigInteger[SUBSET_A.size()];
-						for (int i = 0; i < SUBSET_A.size(); i++)
-						{
-							b = (S.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i))).mod(N));
-							SUBSET_K[i] = b;
-							subkcmd = subkcmd + " " + b;
+						SUBSET_K.clear();
+						BigInteger m;
+						for (int i = 0; i < SUBSET_A.size(); i++) {
+							m = S.multiply(SUBSET_S.get(SUBSET_A.get(i))).mod(N);
+							SUBSET_K.add(m);
+							subkcmd = subkcmd + " " + m;
 						}
-						if (!encrypted)
-						{
+						if (!encrypted) {
 							System.out.println("CLIENT>>>:" + subkcmd);
 							out.println(subkcmd);
-						} else
-						{
+						} else {
 							System.out.println("E>CLIENT>>>:" + subkcmd);
 							out.println(kDE.encrypt(subkcmd));
 						}
@@ -398,8 +368,7 @@ public class Client extends Super implements Runnable
 					case -1:
 					}
 				}
-			} catch (Exception e)
-			{
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
