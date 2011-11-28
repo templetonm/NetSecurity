@@ -8,7 +8,6 @@ import java.math.BigInteger;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Random;
 
@@ -109,8 +108,8 @@ class ConnectionHandler extends Super implements Runnable {
 									kDE = new Karn(Secret);
 									encrypted = true;
 								} else if (tokens[1].equals("PUBLIC_KEY")) {
-									V = new BigInteger(tokens[2], 32);
-									N = new BigInteger(tokens[3], 32);
+									V = new BigInteger(tokens[2]);
+									N = new BigInteger(tokens[3]);
 								} else if (tokens[1].equals("AUTHORIZE_SET")) {
 									AUTHORIZE_SET.clear();
 									int i = 2;
@@ -214,8 +213,7 @@ class ConnectionHandler extends Super implements Runnable {
 						// ROUNDS
 						if (encrypted) {
 							Random numGenerator = new Random();
-							ROUNDS = 2;
-							//ROUNDS = numGenerator.nextInt(10) + 5;
+							ROUNDS = numGenerator.nextInt(10) + 5;
 							String roundmsg = "ROUNDS " + ROUNDS;
 							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
 									roundmsg);
@@ -238,7 +236,12 @@ class ConnectionHandler extends Super implements Runnable {
 							SUBSET_A.addAll(tmpSet);
 							Collections.sort(SUBSET_A);
 							String setamsg = "SUBSET_A";
+							String setbmsg = "SUBSET_B";
 
+							SUBSET_A.clear();
+							SUBSET_A.add(2);
+							SUBSET_A.add(4);
+							SUBSET_A.add(5);
 							for (int i = 0; i < SUBSET_A.size(); i++) {
 								setamsg += " "
 										+ String.valueOf(SUBSET_A.get(i));
@@ -247,11 +250,12 @@ class ConnectionHandler extends Super implements Runnable {
 							for (int i = 0; i < ROUNDS; i++) {
 								if (!SUBSET_A.contains(i)) {
 									SUBSET_B.add(i);
+									setbmsg += " " + String.valueOf(i);
 								}
 							}
 
-							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
-									setamsg);
+							System.out.format("E>SERVER-%d>>>:%s\n%s\n", threadID,
+									setamsg, setbmsg);
 							out.println(kDE.encrypt(setamsg));
 						}
 						break;
@@ -264,9 +268,9 @@ class ConnectionHandler extends Super implements Runnable {
 						if (encrypted) {
 							for (int i = 0; i < SUBSET_A.size(); i++) {
 								test = SUBSET_K.get(i).modPow(new BigInteger("2"), N);
-								actual = V.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i))).mod(N);
+								actual = V.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i)).pow(2)).mod(N);
 
-								if (test == actual) {
+								if (test.equals(actual)) {
 									System.out.format(
 											"K value: %s == %s Good to go!\n",
 											test, actual);
@@ -280,9 +284,9 @@ class ConnectionHandler extends Super implements Runnable {
 
 							for (int i = 0; i < SUBSET_B.size(); i++) {
 								test = SUBSET_J.get(i).modPow(new BigInteger("2"), N);
-								actual = V.multiply(AUTHORIZE_SET.get(SUBSET_B.get(i))).mod(N);
+								actual = AUTHORIZE_SET.get(SUBSET_B.get(i)).modPow(new BigInteger("2"), N);
 
-								if (test == actual) {
+								if (test.equals(actual)) {
 									System.out.format(
 											"J value: %s == %s Good to go!\n",
 											test, actual);

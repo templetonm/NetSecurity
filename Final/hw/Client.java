@@ -13,7 +13,6 @@ public class Client extends Super implements Runnable {
 	private BigInteger S;
 	private int ROUNDS;
 	private ArrayList<BigInteger> AUTHORIZE_SET = new ArrayList<BigInteger>();
-	private ArrayList<BigInteger> SUBSET_S = new ArrayList<BigInteger>();
 	private ArrayList<BigInteger> SUBSET_K = new ArrayList<BigInteger>();
 	private ArrayList<BigInteger> SUBSET_J = new ArrayList<BigInteger>();
 	private ArrayList<Integer> SUBSET_A = new ArrayList<Integer>();
@@ -308,15 +307,14 @@ public class Client extends Super implements Runnable {
 					case 12:
 						String authcmd = "AUTHORIZE_SET";
 						AUTHORIZE_SET.clear();
-						SUBSET_S.clear();
-						BigInteger j, k;
+						BigInteger j;
+						BigInteger R;
 						
 						for (int i = 0; i < ROUNDS; i++) {
-							j = new BigInteger(String.valueOf(random.nextInt()));
-							SUBSET_S.add(j);
-							k = j.modPow(new BigInteger("2"),N);
-							AUTHORIZE_SET.add(k);
-							authcmd = authcmd + " " + k.toString();
+							R = new BigInteger(String.valueOf(Math.abs(random.nextInt())));
+							j = R.modPow(new BigInteger("2"), N);
+							AUTHORIZE_SET.add(j);
+							authcmd = authcmd + " " + j.toString();
 						}
 						if (!encrypted) {
 							System.out.println("CLIENT>>>:" + authcmd);
@@ -335,7 +333,7 @@ public class Client extends Super implements Runnable {
 							if (a < SUBSET_A.size() && SUBSET_A.get(a) == i) {
 								a++;
 							} else {
-								b = SUBSET_S.get(i).mod(N);
+								b = AUTHORIZE_SET.get(i).mod(N);
 								SUBSET_J.add(b);
 								subjcmd = subjcmd + " " + b;
 							}
@@ -353,7 +351,7 @@ public class Client extends Super implements Runnable {
 						SUBSET_K.clear();
 						BigInteger m;
 						for (int i = 0; i < SUBSET_A.size(); i++) {
-							m = S.multiply(SUBSET_S.get(SUBSET_A.get(i))).mod(N);
+							m = S.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i))).mod(N);
 							SUBSET_K.add(m);
 							subkcmd = subkcmd + " " + m;
 						}
