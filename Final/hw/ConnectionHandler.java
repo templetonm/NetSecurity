@@ -115,8 +115,8 @@ class ConnectionHandler extends Super implements Runnable {
 									int i = 2;
 									while (true) {
 										try {
-											AUTHORIZE_SET.add(new BigInteger(
-													tokens[i]));
+											// Strip the first two characters
+											AUTHORIZE_SET.add(new BigInteger(tokens[i].substring(2)));
 											i++;
 										} catch (Exception e) {
 											// AUTHORIZE_SET filled
@@ -128,11 +128,10 @@ class ConnectionHandler extends Super implements Runnable {
 									int i = 2;
 									while (true) {
 										try {
-											SUBSET_K.add(new BigInteger(
-													tokens[i]));
+											SUBSET_K.add(new BigInteger(tokens[i]));
 											i++;
 										} catch (Exception e) {
-											// AUTHORIZE_SET filled
+											// SUBSET_K filled
 											break;
 										}
 									}
@@ -145,7 +144,7 @@ class ConnectionHandler extends Super implements Runnable {
 													tokens[i]));
 											i++;
 										} catch (Exception e) {
-											// AUTHORIZE_SET filled
+											// SUBSET_J filled
 											break;
 										}
 									}
@@ -211,9 +210,11 @@ class ConnectionHandler extends Super implements Runnable {
 						break;
 					case 10:
 						// ROUNDS
+						
 						if (encrypted) {
-							Random numGenerator = new Random();
-							ROUNDS = numGenerator.nextInt(10) + 5;
+							//Random numGenerator = new Random();
+							ROUNDS = 5;
+							//FAKE_ROUNDS = numGenerator.nextInt(8) + 6;
 							String roundmsg = "ROUNDS " + ROUNDS;
 							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
 									roundmsg);
@@ -222,6 +223,7 @@ class ConnectionHandler extends Super implements Runnable {
 						break;
 					case 11:
 						// SUBSET_A
+						
 						if (encrypted) {
 							int MAX_NUM = ROUNDS / 2;
 							Random rand = new Random();
@@ -238,10 +240,6 @@ class ConnectionHandler extends Super implements Runnable {
 							String setamsg = "SUBSET_A";
 							String setbmsg = "SUBSET_B";
 
-							SUBSET_A.clear();
-							SUBSET_A.add(2);
-							SUBSET_A.add(4);
-							SUBSET_A.add(5);
 							for (int i = 0; i < SUBSET_A.size(); i++) {
 								setamsg += " "
 										+ String.valueOf(SUBSET_A.get(i));

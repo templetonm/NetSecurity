@@ -150,8 +150,7 @@ public class Client extends Super implements Runnable {
 									int i = 2;
 									while (true) {
 										try {
-											SUBSET_A.add(Integer
-													.parseInt(tokens[i]));
+											SUBSET_A.add(Integer.parseInt(tokens[i]));
 											i++;
 										} catch (Exception e) {
 											// SUBSET_A Filled
@@ -314,7 +313,8 @@ public class Client extends Super implements Runnable {
 							R = new BigInteger(String.valueOf(Math.abs(random.nextInt())));
 							j = R.modPow(new BigInteger("2"), N);
 							AUTHORIZE_SET.add(j);
-							authcmd = authcmd + " " + j.toString();
+							// Add a sneaky 42 for the server to strip
+							authcmd = authcmd + " 42" + j.toString();
 						}
 						if (!encrypted) {
 							System.out.println("CLIENT>>>:" + authcmd);
