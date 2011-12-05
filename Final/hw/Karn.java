@@ -1,11 +1,15 @@
+/* The following code is from Prof Franco's webpage
+ * http://gauss.ececs.uc.edu/Courses/c653/lectures/Java/Karn/Karn.java
+ * Formatting was added by Eclipse for readability.
+ */
+
 package hw;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 
-public class Karn
-{
+public class Karn {
 	final int RADIX = 32;
 	final int PADSIZE = 40; // Plaintext buffer */
 
@@ -16,10 +20,8 @@ public class Karn
 	static SecureRandom sr = null; // This is expensive. We only need one
 	static MessageDigest md = null; // This will be shared.
 
-	public Karn(BigInteger bi)
-	{
-		if (sr == null)
-		{
+	public Karn(BigInteger bi) {
+		if (sr == null) {
 			sr = new SecureRandom();
 		}
 
@@ -29,24 +31,20 @@ public class Karn
 		key_left = new byte[key.length / 2];
 		key_right = new byte[key.length / 2];
 
-		for (int i = 0; i < key.length / 2; i++)
-		{
+		for (int i = 0; i < key.length / 2; i++) {
 			key_left[i] = key[i];
 			key_right[i] = key[i + key.length / 2];
 		}
 
-		try
-		{
+		try {
 			md = MessageDigest.getInstance("SHA");
-		} catch (NoSuchAlgorithmException e)
-		{
+		} catch (NoSuchAlgorithmException e) {
 			System.err.println("Yow! NoSuchAlgorithmException. Abandon all hope");
 		}
 	}
 
 	// Encrypt the string using the karn algorithm
-	String encrypt(String plaintext)
-	{
+	String encrypt(String plaintext) {
 		byte[] plain_left, plain_right;
 		byte[] ciph_left, ciph_right;
 		byte[] digest;
@@ -69,11 +67,9 @@ public class Karn
 		// Guard Byte for the ciphertext
 		out.write(42);
 
-		while (cursor < input.length)
-		{
+		while (cursor < input.length) {
 			// Copy the next slab into the left and right
-			for (int i = 0; i < PADSIZE / 2; i++)
-			{
+			for (int i = 0; i < PADSIZE / 2; i++) {
 				plain_left[i] = input[cursor + i];
 				plain_right[i] = input[cursor + PADSIZE / 2 + i];
 			}
@@ -85,8 +81,7 @@ public class Karn
 			digest = md.digest(); // Get out the digest bits
 			// XOR the digest with the right plaintext for the right c-text
 			// Right half
-			for (int i = 0; i < PADSIZE / 2; i++)
-			{
+			for (int i = 0; i < PADSIZE / 2; i++) {
 				ciph_right[i] = (byte) (digest[i] ^ plain_right[i]);
 			}
 
@@ -95,8 +90,7 @@ public class Karn
 			md.update(ciph_right);
 			md.update(key_right);
 			digest = md.digest();
-			for (int i = 0; i < PADSIZE / 2; i++)
-			{
+			for (int i = 0; i < PADSIZE / 2; i++) {
 				ciph_left[i] = (byte) (digest[i] ^ plain_left[i]);
 			}
 
@@ -109,8 +103,7 @@ public class Karn
 	}
 
 	// Decrypt the ciphertext by running Karn in reverse
-	String decrypt(String ciphertext)
-	{
+	String decrypt(String ciphertext) {
 		BigInteger bi;
 		byte input[];
 		byte[] plain_left, plain_right;
@@ -137,11 +130,9 @@ public class Karn
 		ByteArrayOutputStream decryptionOut = new ByteArrayOutputStream();
 
 		// Decryption: This copies the encryption but in reverse order.
-		while (cursor < input.length)
-		{
+		while (cursor < input.length) {
 			// Copy the next slab into the left and right
-			for (int i = 0; i < PADSIZE / 2; i++)
-			{
+			for (int i = 0; i < PADSIZE / 2; i++) {
 				ciph_left[i] = input[cursor + i];
 				ciph_right[i] = input[cursor + PADSIZE / 2 + i];
 			}
@@ -150,8 +141,7 @@ public class Karn
 			md.update(ciph_right);
 			md.update(key_right);
 			digest = md.digest();
-			for (int i = 0; i < PADSIZE / 2; i++)
-			{
+			for (int i = 0; i < PADSIZE / 2; i++) {
 				plain_left[i] = (byte) (digest[i] ^ ciph_left[i]);
 			}
 
@@ -159,8 +149,7 @@ public class Karn
 			md.update(plain_left);
 			md.update(key_left);
 			digest = md.digest();
-			for (int i = 0; i < PADSIZE / 2; i++)
-			{
+			for (int i = 0; i < PADSIZE / 2; i++) {
 				plain_right[i] = (byte) (digest[i] ^ ciph_right[i]);
 			}
 
@@ -174,8 +163,7 @@ public class Karn
 	}
 
 	// Padding
-	private byte[] StringToBytes(String input)
-	{
+	private byte[] StringToBytes(String input) {
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		byte scratch[];
 
@@ -195,16 +183,15 @@ public class Karn
 	}
 
 	// Strip the header off the byte array and return the string
-	private String StripPadding(byte input[])
-	{
+	private String StripPadding(byte input[]) {
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 		int i = 0;
 
-		while (input[i] != 0)
-		{
+		while (input[i] != 0) {
 			buffer.write(input[i]);
 			i++;
-			if (i >= input.length) break;
+			if (i >= input.length)
+				break;
 		}
 
 		return (new String(buffer.toByteArray()));

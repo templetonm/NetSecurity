@@ -23,6 +23,7 @@ class ConnectionHandler extends Super implements Runnable {
 	private BigInteger N;
 	private BigInteger V;
 	private int ROUNDS;
+	private String COOKIEFILE;
 	private ArrayList<BigInteger> AUTHORIZE_SET = new ArrayList<BigInteger>();
 	private ArrayList<BigInteger> SUBSET_J = new ArrayList<BigInteger>();
 	private ArrayList<BigInteger> SUBSET_K = new ArrayList<BigInteger>();
@@ -42,6 +43,7 @@ class ConnectionHandler extends Super implements Runnable {
 			in = new BufferedReader(new InputStreamReader(
 					incoming.getInputStream()));
 			IDENT = id;
+			COOKIEFILE = IDENT + ".txt";
 			threadID = thID;
 			dhe = new DHExchange("DHKey");
 		} catch (Exception e) {
@@ -115,8 +117,8 @@ class ConnectionHandler extends Super implements Runnable {
 									int i = 2;
 									while (true) {
 										try {
-											// Strip the first two characters
-											AUTHORIZE_SET.add(new BigInteger(tokens[i].substring(2)));
+											// Strip the first three characters
+											AUTHORIZE_SET.add(new BigInteger(tokens[i].substring(3)));
 											i++;
 										} catch (Exception e) {
 											// AUTHORIZE_SET filled

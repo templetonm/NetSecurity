@@ -11,9 +11,7 @@ public class Super
 	boolean thisIsClient = false;
 	PrintWriter out = null;
 	BufferedReader in = null;
-
-	BufferedReader fcin = null; // file cookie in
-	static String COOKIEFILE = "cookie.txt";
+	BufferedReader fcin = null;
 	static String IDENT = "";
 
 	Thread runner = null;

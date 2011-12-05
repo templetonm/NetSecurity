@@ -12,6 +12,10 @@ public class Client extends Super implements Runnable {
 	private BigInteger V;
 	private BigInteger S;
 	private int ROUNDS;
+	private int VALUE;
+	private boolean START;
+	String COOKIEFILE;
+	String PASSWORDFILE;
 	private ArrayList<BigInteger> AUTHORIZE_SET = new ArrayList<BigInteger>();
 	private ArrayList<BigInteger> SUBSET_K = new ArrayList<BigInteger>();
 	private ArrayList<BigInteger> SUBSET_J = new ArrayList<BigInteger>();
@@ -42,11 +46,10 @@ public class Client extends Super implements Runnable {
 	// 10: First step of authentication
 	// 11: PUBLIC_KEY
 	// 12: AUTHORIZE_SET
-	// 13: SUBSET_J
 	// 14: SUBSET_K
 
 	public Client(String id, String monitor_name, int monitor_port,
-			String host_name, int host_port) {
+			String host_name, int host_port, int value) {
 		try {
 			MONITOR_NAME = monitor_name;
 			MONITOR_PORT = monitor_port;
@@ -58,6 +61,15 @@ public class Client extends Super implements Runnable {
 					mySocket.getInputStream()));
 			uin = new BufferedReader(new InputStreamReader(System.in));
 			IDENT = id;
+			COOKIEFILE = IDENT + "COOKIE.txt";
+			PASSWORDFILE = IDENT + "PASSWORD.txt";
+			VALUE = value;
+			START = true;
+			/*if (VALUE > 0) {
+				START = true;
+			} else {
+				START = false;
+			}*/
 			thisIsClient = true;
 
 			try {
@@ -121,8 +133,7 @@ public class Client extends Super implements Runnable {
 								// Add check of hostport as well?
 								if (tokens[1].equals("PASSWORD")) {
 									// This is our cookie.
-									System.out
-											.println("CLIENT>>>:Received cookie; saving.");
+									System.out.println("CLIENT>>>:Received cookie; saving.");
 									mMsg = tokens[2];
 									fcout = new PrintWriter(new FileWriter(
 											COOKIEFILE));
@@ -138,10 +149,8 @@ public class Client extends Super implements Runnable {
 									kDE = new Karn(Secret);
 									encrypted = true;
 								} else if (tokens[2].equals("LOCALHOST")) {
-									System.out
-											.println("CLIENT>>>:Validated host.");
-									free = true;
-									sMsg = 5;
+									/*System.out.println("CLIENT>>>:Validated host.");
+									free = true;*/
 								} else if (tokens[1].equals("ROUNDS")) {
 									ROUNDS = Integer.parseInt(tokens[2]);
 								} else if (tokens[1].equals("SUBSET_A")) {
@@ -157,11 +166,13 @@ public class Client extends Super implements Runnable {
 											break;
 										}
 									}
+								} else if (tokens[1].equals("TRANSFER_RESPONSE")) {
+									
 								} else {
 									// In any other event, just let the user
-									// handle things – maybe they
+									// handle things and maybe they
 									// can find a way out!
-									free = true;
+									//free = true;
 								}
 							}
 						}
@@ -184,45 +195,40 @@ public class Client extends Super implements Runnable {
 
 					switch (sMsg) {
 					case 0:
-						String identmsg = "IDENT " + IDENT + " "
-								+ dhe.getPublicKey().toString(32);
+						String identmsg = "IDENT " + IDENT + " " + dhe.getPublicKey().toString(32);
 						if (!encrypted) {
-							System.out.println("CLIENT>>>:Returning ident... "
-									+ identmsg);
+							//System.out.println("CLIENT>>>:Returning ident... " + identmsg);
 							out.println(identmsg);
 						} else {
-							System.out
-									.println("E>CLIENT>>>:Returning ident... "
-											+ identmsg);
+							//System.out.println("E>CLIENT>>>:Returning ident... " + identmsg);
 							out.println(kDE.encrypt(identmsg));
 						}
 						break;
 					case 1:
 						if (!encrypted) {
-							System.out.println("CLIENT>>>:Returning password.");
+							//System.out.println("CLIENT>>>:Returning password.");
 							out.println("PASSWORD KNUT_WAS_A_BEAR");
 						} else {
-							System.out
-									.println("E>CLIENT>>>:Returning password.");
+							//System.out.println("E>CLIENT>>>:Returning password.");
 							out.println(kDE.encrypt("PASSWORD KNUT_WAS_A_BEAR"));
 						}
 
 						break;
 					case 2:
 						if (!encrypted) {
-							System.out.println("CLIENT>>>:Returning cookie.");
+							//System.out.println("CLIENT>>>:Returning cookie.");
 							fcin = new BufferedReader(
 									new FileReader(COOKIEFILE));
 							mMsg = fcin.readLine();
-							System.out.println("CLIENT>>>:Cookie: " + mMsg);
+							//System.out.println("CLIENT>>>:Cookie: " + mMsg);
 							fcin.close();
 							out.println("ALIVE " + mMsg);
 						} else {
-							System.out.println("E>CLIENT>>>:Returning cookie.");
+							//System.out.println("E>CLIENT>>>:Returning cookie.");
 							fcin = new BufferedReader(
 									new FileReader(COOKIEFILE));
 							mMsg = fcin.readLine();
-							System.out.println("CLIENT>>>:Cookie: " + mMsg);
+							//System.out.println("CLIENT>>>:Cookie: " + mMsg);
 							fcin.close();
 							mMsg = "ALIVE " + mMsg;
 							mMsg = kDE.encrypt(mMsg);
@@ -232,20 +238,50 @@ public class Client extends Super implements Runnable {
 					case 3:
 						// HOST_PORT
 						if (!encrypted) {
-							System.out
-									.println("CLIENT>>>:Returning host port.");
+							//System.out.println("CLIENT>>>:Returning host port.");
 							out.println("HOST_PORT " + HOST_NAME + " "
 									+ HOST_PORT);
 						} else {
-							System.out
-									.println("E>CLIENT>>>:Returning host port.");
+							//System.out.println("E>CLIENT>>>:Returning host port.");
 							mMsg = "HOST_PORT " + HOST_NAME + " " + HOST_PORT;
 							mMsg = kDE.encrypt(mMsg);
 							out.println(mMsg);
 						}
+						free = true;
 						break;
 					case 5:
 						// user input
+						if (START == true) {
+							String changepass = "CHANGE_PASSWORD ";
+							fcin = new BufferedReader(new FileReader(PASSWORDFILE));
+							String pass = fcin.readLine();
+							fcin.close();
+							changepass += pass + " ";
+							Integer g = Math.abs(random.nextInt());
+							fcout = new PrintWriter(new FileWriter(PASSWORDFILE));
+							fcout.flush();
+							fcout.println(g);
+							fcout.close();
+							changepass += String.valueOf(g);
+							System.out.println(changepass);
+							changepass = kDE.encrypt(changepass);
+							out.println(changepass);
+							
+							/*String transfermsg = "TRANSFER_REQUEST ";
+							if (IDENT == "TEMPLETON") {
+								transfermsg += IDENT +" " + VALUE + " FROM " + "CR89";
+							} else if (IDENT == "SIKORSKI") {
+								transfermsg += IDENT +" " + VALUE + " FROM " + "TEMPLETON";
+							} else {
+								transfermsg += IDENT +" " + VALUE + " FROM " + "SIKORSKI";
+							}
+							System.out.println(transfermsg);
+							transfermsg = kDE.encrypt(transfermsg);
+							out.println(transfermsg);*/
+							START=false;
+						}
+						free = false;
+						/*
 						String inputcmd = "CLIENT>>>:Input client command:";
 
 						if (!encrypted) {
@@ -276,12 +312,6 @@ public class Client extends Super implements Runnable {
 													// request
 							{
 								if (tokens[0].equals("TRANSFER_REQUEST")) {
-									/*
-									 * Recipient = tokens[1]; Amount =
-									 * Integer.parseInt(tokens[2]); Sender =
-									 * tokens[4];
-									 */
-
 									free = false;
 									sMsg = 10; // 10 is code for first step of
 												// authentication
@@ -291,6 +321,7 @@ public class Client extends Super implements Runnable {
 							out.println(kDE.encrypt(mMsg));
 							// out.println("GET_GAME_IDENTS");
 						}
+						*/
 						break;
 					case 11:
 						String keycmd = "PUBLIC_KEY " + V.toString() + " "
@@ -308,13 +339,14 @@ public class Client extends Super implements Runnable {
 						AUTHORIZE_SET.clear();
 						BigInteger j;
 						BigInteger R;
+						int rubbish;
 						
 						for (int i = 0; i < ROUNDS; i++) {
 							R = new BigInteger(String.valueOf(Math.abs(random.nextInt())));
 							j = R.modPow(new BigInteger("2"), N);
 							AUTHORIZE_SET.add(j);
-							// Add a sneaky 42 for the server to strip
-							authcmd = authcmd + " 42" + j.toString();
+							rubbish = random.nextInt(800)+101;
+							authcmd = authcmd + " " + String.valueOf(rubbish) + j.toString();
 						}
 						if (!encrypted) {
 							System.out.println("CLIENT>>>:" + authcmd);

@@ -11,14 +11,7 @@ public class Server implements Runnable
 	ServerSocket s = null;
 	ConnectionHandler myConHand = null;
 	BufferedReader fcin = null; // file cookie in
-
 	Thread runner = null;
-
-	// int state
-	// 0: ident
-	// 1: password
-	// 2: alive
-	// 3: quit
 
 	public Server(String ident, int monitor_port, int local_port)
 	{

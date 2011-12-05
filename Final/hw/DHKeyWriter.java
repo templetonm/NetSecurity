@@ -33,28 +33,40 @@
 // Revision 0.1  1998/11/30 03:25:28  bkuhn
 //   # initial version
 //
+
+/* Modified on 11/30/2011 by Michael Templeton
+ * - Moved DHKey class out of DHKeyWriter.java and into it's own file
+ * - Added this class to the hw package
+ * - Eclipse formatting
+ * - Fix Eclipse warnings (unused import java.security.* and java.util.Date)
+ * - Use p and g from http://gauss.ececs.uc.edu/Courses/c653/homework/assgn3.html
+ * - Changed description for the key
+ */
+
 package hw;
 
 import java.io.*;
 import java.math.BigInteger;
 
-public class DHKeyWriter
-{
-	public static void main(String args[])
-	{
-		try
-		{
+public class DHKeyWriter {
+	public static void main(String args[]) {
+		try {
 			BigInteger p = new BigInteger(
 				"7897383601534681724700886135766287333879367007236994792380151951185032550914983506148400098806010880449684316518296830583436041101740143835597057941064647");
 			BigInteger g = new BigInteger(
 				"2333938645766150615511255943169694097469294538730577330470365230748185729160097289200390738424346682521059501689463393405180773510126708477896062227281603");
 			DHKey key = new DHKey(p, g, "C653 DH key");
 			FileOutputStream fos = new FileOutputStream("DHKey");
-			ObjectOutputStream oos = new ObjectOutputStream(fos);
-			oos.writeObject(key);
-		} catch (Exception e)
-		{
-			System.out.println("Whoops!");
+			ObjectOutputStream out = new ObjectOutputStream(fos);
+			out.writeObject(key);
+			fos.close();
+
+			FileInputStream fin = new FileInputStream("DHKey");
+			ObjectInputStream in = new ObjectInputStream(fin);
+			DHKey dhin = (DHKey) in.readObject();
+			System.out.println(dhin.toString());
+		} catch (Exception e) {
+			System.out.println(e.toString());
 		}
 	}
 }
