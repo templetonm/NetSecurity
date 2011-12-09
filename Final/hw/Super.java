@@ -1,10 +1,18 @@
+/* Super.java
+ * This is the Super class responsible for extending common logic of the Client
+ * and ConnectionHandler classes.
+ * The initial code was from Prof Franco's webpage
+ * http://gauss.ececs.uc.edu/Courses/c653/homework/MessageParser.java
+ * 
+ * Written by Robert Sikorski
+ */
+
 package hw;
 
 import java.io.*;
 import java.math.*;
 
-public class Super
-{
+public class Super {
 	boolean waiting = false;
 	boolean done = false;
 	boolean encrypted = false;
@@ -24,37 +32,29 @@ public class Super
 	int sMsg = -1;
 	String mMsg = "";
 
-	public String GetMonitorMessage(boolean isEncrypted, boolean isClient, int threadID)
-	{
+	public String GetMonitorMessage(boolean isEncrypted, boolean isClient, int threadID) {
 		String msg = "";
 
-		try
-		{
+		try {
 			msg = in.readLine();
-		} catch (Exception e)
-		{
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 
-		if (!(msg == null) && !msg.trim().equals(""))
-		{
-			if (isEncrypted)
-			{
+		if (!(msg == null) && !msg.trim().equals("")) {
+			if (isEncrypted) {
 				// decrypt!
 				msg = kDE.decrypt(msg);
 				System.out.print("E>");
 			}
 
 			// Output message to screen so we know what's going on.
-			if (isClient)
-			{
+			if (isClient) {
 				System.out.println("MONITOR>>>CLIENT:" + msg);
-			} else
-			{
+			} else {
 				System.out.format("MONITOR>>>SERVER-%d:" + msg + "\n", threadID);
 			}
-		} else
-		{
+		} else {
 			waiting = true;
 			done = true;
 			sMsg = -10;

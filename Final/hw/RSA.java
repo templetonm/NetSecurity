@@ -1,3 +1,9 @@
+/* RSA.java
+ * This is the RSA class responsible for RSA and Zero-Knowledge logic
+ * 
+ * Written by Robert Sikorski
+ */
+
 package hw;
 
 // hwRSA.java
@@ -6,8 +12,7 @@ import java.math.*;
 import java.util.*;
 import java.io.*;
 
-public class RSA
-{
+public class RSA {
 	private static final int numberOfBits = 1024;// 32768; // 2^15
 	private static final BigInteger ONE = new BigInteger("1");
 	private static final String AUTHFILE = "auth.txt";
@@ -26,8 +31,7 @@ public class RSA
 	public BigInteger S;
 	public BigInteger V;
 
-	public RSA(Random random)
-	{
+	public RSA(Random random) {
 		savedRandom = random;
 
 		p = getPrime(random); // p and q are arbitrary large primes
@@ -36,18 +40,14 @@ public class RSA
 		phiN = (p.subtract(ONE)).multiply(q.subtract(ONE));
 
 		S = getPrime(random); // s is an arbitrary secret; we'll use a prime
-								// because they're BA!!!
 		V = S.modPow(new BigInteger("2"), n);
-		//V = (S.multiply(S)).mod(n);
 	}
 
-	public void initialize(Random random)
-	{
+	public void initialize(Random random) {
 		// initialize all the variables
 	}
 
-	public void save() throws Exception
-	{
+	public void save() throws Exception {
 		// save out the RSA information
 		PrintWriter fileout = new PrintWriter(new FileWriter(AUTHFILE));
 		fileout.flush();
@@ -62,8 +62,7 @@ public class RSA
 		fileout.close();
 	}
 
-	public void load() throws Exception
-	{
+	public void load() throws Exception {
 		// load all the variables from a saved source
 		BufferedReader filein = new BufferedReader(new FileReader(AUTHFILE));
 		// assume filein.ready() is true for the moment
@@ -71,15 +70,14 @@ public class RSA
 		q = new BigInteger(filein.readLine());
 		n = new BigInteger(filein.readLine());
 		phiN = new BigInteger(filein.readLine());
-		// e = new BigInteger(filein.readLine());
-		// d = new BigInteger(filein.readLine());
+		e = new BigInteger(filein.readLine());
+		d = new BigInteger(filein.readLine());
 		S = new BigInteger(filein.readLine());
 		V = new BigInteger(filein.readLine());
 		filein.close();
 	}
 
-	private BigInteger getPrime(Random random)
-	{
+	private BigInteger getPrime(Random random) {
 		return BigInteger.probablePrime(numberOfBits, random);
 	}
 }

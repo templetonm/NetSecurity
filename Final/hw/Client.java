@@ -1,3 +1,16 @@
+/* Server.java
+ * This is the Server class responsible for binding the ConnectionHandler to
+ * the monitor.
+ * The initial code was from Prof Franco's webpage
+ * http://gauss.ececs.uc.edu/Courses/c653/homework/Specs/ActiveClient.java
+ * 
+ * Written by Robert Sikorski
+ * 
+ * Modified by Michael Templeton
+ * - Added Zero-Knowledge authentication
+ * - Added automatic transfer requests
+ */
+
 package hw;
 
 import java.io.*;
@@ -13,6 +26,9 @@ public class Client extends Super implements Runnable {
 	private BigInteger S;
 	private int ROUNDS;
 	private int VALUE;
+	private int TEMPLETON;
+	private int SIKORSKI;
+	private int PARK;
 	private boolean START;
 	String COOKIEFILE;
 	String PASSWORDFILE;
@@ -48,8 +64,7 @@ public class Client extends Super implements Runnable {
 	// 12: AUTHORIZE_SET
 	// 14: SUBSET_K
 
-	public Client(String id, String monitor_name, int monitor_port,
-			String host_name, int host_port, int value) {
+	public Client(String id, String monitor_name, int monitor_port, String host_name, int host_port, int templeton, int sikorski, int park) {
 		try {
 			MONITOR_NAME = monitor_name;
 			MONITOR_PORT = monitor_port;
@@ -57,19 +72,16 @@ public class Client extends Super implements Runnable {
 			HOST_PORT = host_port;
 			mySocket = new Socket(MONITOR_NAME, MONITOR_PORT);
 			out = new PrintWriter(mySocket.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(
-					mySocket.getInputStream()));
+			in = new BufferedReader(new InputStreamReader(mySocket.getInputStream()));
 			uin = new BufferedReader(new InputStreamReader(System.in));
 			IDENT = id;
 			COOKIEFILE = IDENT + "COOKIE.txt";
 			PASSWORDFILE = IDENT + "PASSWORD.txt";
-			VALUE = value;
+			// Starting values
+			TEMPLETON = templeton;
+			SIKORSKI = sikorski;
+			PARK = park;
 			START = true;
-			/*if (VALUE > 0) {
-				START = true;
-			} else {
-				START = false;
-			}*/
 			thisIsClient = true;
 
 			try {
@@ -128,15 +140,13 @@ public class Client extends Super implements Runnable {
 						} else {
 							String[] tokens = mMsg.split(" ");
 
-							if (tokens.length != 0
-									&& tokens[0].equals("RESULT:")) {
+							if (tokens.length != 0 && tokens[0].equals("RESULT:")) {
 								// Add check of hostport as well?
 								if (tokens[1].equals("PASSWORD")) {
-									// This is our cookie.
 									System.out.println("CLIENT>>>:Received cookie; saving.");
+									// This is our cookie.
 									mMsg = tokens[2];
-									fcout = new PrintWriter(new FileWriter(
-											COOKIEFILE));
+									fcout = new PrintWriter(new FileWriter(COOKIEFILE));
 									fcout.flush();
 									fcout.println(mMsg);
 									fcout.close();
@@ -149,11 +159,15 @@ public class Client extends Super implements Runnable {
 									kDE = new Karn(Secret);
 									encrypted = true;
 								} else if (tokens[2].equals("LOCALHOST")) {
-									/*System.out.println("CLIENT>>>:Validated host.");
-									free = true;*/
+									/*
+									 * System.out.println(
+									 * "CLIENT>>>:Validated host."); free =
+									 * true;
+									 */
 								} else if (tokens[1].equals("ROUNDS")) {
 									ROUNDS = Integer.parseInt(tokens[2]);
 								} else if (tokens[1].equals("SUBSET_A")) {
+									// Empty the arraylist
 									SUBSET_A.clear();
 									// First value starts at index 2
 									int i = 2;
@@ -167,12 +181,13 @@ public class Client extends Super implements Runnable {
 										}
 									}
 								} else if (tokens[1].equals("TRANSFER_RESPONSE")) {
-									
+									// Just go to user input logic and we'll automate it there
+									sMsg = 5;
 								} else {
 									// In any other event, just let the user
 									// handle things and maybe they
 									// can find a way out!
-									//free = true;
+									// free = true;
 								}
 							}
 						}
@@ -194,208 +209,208 @@ public class Client extends Super implements Runnable {
 					// TODO: Remove non encrypted where necessary
 
 					switch (sMsg) {
-					case 0:
-						String identmsg = "IDENT " + IDENT + " " + dhe.getPublicKey().toString(32);
-						if (!encrypted) {
-							//System.out.println("CLIENT>>>:Returning ident... " + identmsg);
-							out.println(identmsg);
-						} else {
-							//System.out.println("E>CLIENT>>>:Returning ident... " + identmsg);
-							out.println(kDE.encrypt(identmsg));
-						}
-						break;
-					case 1:
-						if (!encrypted) {
-							//System.out.println("CLIENT>>>:Returning password.");
-							out.println("PASSWORD KNUT_WAS_A_BEAR");
-						} else {
-							//System.out.println("E>CLIENT>>>:Returning password.");
-							out.println(kDE.encrypt("PASSWORD KNUT_WAS_A_BEAR"));
-						}
-
-						break;
-					case 2:
-						if (!encrypted) {
-							//System.out.println("CLIENT>>>:Returning cookie.");
-							fcin = new BufferedReader(
-									new FileReader(COOKIEFILE));
-							mMsg = fcin.readLine();
-							//System.out.println("CLIENT>>>:Cookie: " + mMsg);
-							fcin.close();
-							out.println("ALIVE " + mMsg);
-						} else {
-							//System.out.println("E>CLIENT>>>:Returning cookie.");
-							fcin = new BufferedReader(
-									new FileReader(COOKIEFILE));
-							mMsg = fcin.readLine();
-							//System.out.println("CLIENT>>>:Cookie: " + mMsg);
-							fcin.close();
-							mMsg = "ALIVE " + mMsg;
-							mMsg = kDE.encrypt(mMsg);
-							out.println(mMsg);
-						}
-						break;
-					case 3:
-						// HOST_PORT
-						if (!encrypted) {
-							//System.out.println("CLIENT>>>:Returning host port.");
-							out.println("HOST_PORT " + HOST_NAME + " "
-									+ HOST_PORT);
-						} else {
-							//System.out.println("E>CLIENT>>>:Returning host port.");
-							mMsg = "HOST_PORT " + HOST_NAME + " " + HOST_PORT;
-							mMsg = kDE.encrypt(mMsg);
-							out.println(mMsg);
-						}
-						free = true;
-						break;
-					case 5:
-						// user input
-						if (START == true) {
-							String changepass = "CHANGE_PASSWORD ";
-							fcin = new BufferedReader(new FileReader(PASSWORDFILE));
-							String pass = fcin.readLine();
-							fcin.close();
-							changepass += pass + " ";
-							Integer g = Math.abs(random.nextInt());
-							fcout = new PrintWriter(new FileWriter(PASSWORDFILE));
-							fcout.flush();
-							fcout.println(g);
-							fcout.close();
-							changepass += String.valueOf(g);
-							System.out.println(changepass);
-							changepass = kDE.encrypt(changepass);
-							out.println(changepass);
-							
-							/*String transfermsg = "TRANSFER_REQUEST ";
-							if (IDENT == "TEMPLETON") {
-								transfermsg += IDENT +" " + VALUE + " FROM " + "CR89";
-							} else if (IDENT == "SIKORSKI") {
-								transfermsg += IDENT +" " + VALUE + " FROM " + "TEMPLETON";
+						case 0:
+							String identmsg = "IDENT " + IDENT + " " + dhe.getPublicKey().toString(32);
+							if (!encrypted) {
+								// System.out.println("CLIENT>>>:Returning ident... "
+								// + identmsg);
+								out.println(identmsg);
 							} else {
-								transfermsg += IDENT +" " + VALUE + " FROM " + "SIKORSKI";
+								// System.out.println("E>CLIENT>>>:Returning ident... "
+								// + identmsg);
+								out.println(kDE.encrypt(identmsg));
 							}
-							System.out.println(transfermsg);
-							transfermsg = kDE.encrypt(transfermsg);
-							out.println(transfermsg);*/
-							START=false;
-						}
-						free = false;
-						/*
-						String inputcmd = "CLIENT>>>:Input client command:";
+							break;
+						case 1:
+							if (!encrypted) {
+								// System.out.println("CLIENT>>>:Returning password.");
+								out.println("PASSWORD KNUT_WAS_A_BEAR");
+							} else {
+								// System.out.println("E>CLIENT>>>:Returning password.");
+								out.println(kDE.encrypt("PASSWORD KNUT_WAS_A_BEAR"));
+							}
 
-						if (!encrypted) {
-							System.out.println("CLIENT>>>:Sending commands!");
-							System.out.println(inputcmd);
-							mMsg = uin.readLine();
-							out.println(mMsg);
-						} else {
-							// This is where we can send
-							// "TRANSFER_REQUEST ARG1 ARG2 FROM ARG2".
-							// I wouldn't automate this.
-							// I also wouldn't automate the TRANSFER_RESPONSE
-							// for the sake of not
-							// waving through bad requests.
-
-							// We should automate everything after the T_Req and
-							// T_Rep for the sake of brevity,
-							// however.
-
-							System.out.println("E>CLIENT>>>:Sending commands!");
-							System.out.println("E>" + inputcmd);
-							mMsg = uin.readLine();
-
-							// tokenize this to check for transfer; we unset
-							// 'free' if this is the case.
-							String[] tokens = mMsg.split(" ");
-							if (tokens.length == 5) // Hopefully a transfer
-													// request
-							{
-								if (tokens[0].equals("TRANSFER_REQUEST")) {
-									free = false;
-									sMsg = 10; // 10 is code for first step of
-												// authentication
+							break;
+						case 2:
+							if (!encrypted) {
+								// System.out.println("CLIENT>>>:Returning cookie.");
+								fcin = new BufferedReader(new FileReader(COOKIEFILE));
+								mMsg = fcin.readLine();
+								// System.out.println("CLIENT>>>:Cookie: " +
+								// mMsg);
+								fcin.close();
+								out.println("ALIVE " + mMsg);
+							} else {
+								// System.out.println("E>CLIENT>>>:Returning cookie.");
+								fcin = new BufferedReader(new FileReader(COOKIEFILE));
+								mMsg = fcin.readLine();
+								// System.out.println("CLIENT>>>:Cookie: " +
+								// mMsg);
+								fcin.close();
+								mMsg = "ALIVE " + mMsg;
+								mMsg = kDE.encrypt(mMsg);
+								out.println(mMsg);
+							}
+							break;
+						case 3:
+							// HOST_PORT
+							if (!encrypted) {
+								// System.out.println("CLIENT>>>:Returning host port.");
+								out.println("HOST_PORT " + HOST_NAME + " " + HOST_PORT);
+							} else {
+								// System.out.println("E>CLIENT>>>:Returning host port.");
+								mMsg = "HOST_PORT " + HOST_NAME + " " + HOST_PORT;
+								mMsg = kDE.encrypt(mMsg);
+								out.println(mMsg);
+							}
+							free = true;
+							break;
+						case 5:
+							// user input
+							String transmsg = "TRANSFER_REQUEST " + IDENT + " ";
+							if (START == true) {
+								String changepass = "CHANGE_PASSWORD ";
+								fcin = new BufferedReader(new FileReader(PASSWORDFILE));
+								String pass = fcin.readLine();
+								fcin.close();
+								changepass += pass + " ";
+								Integer g = Math.abs(random.nextInt());
+								fcout = new PrintWriter(new FileWriter(PASSWORDFILE));
+								fcout.flush();
+								fcout.println(g);
+								fcout.close();
+								changepass += String.valueOf(g);
+								System.out.println(changepass);
+								changepass = kDE.encrypt(changepass);
+								out.println(changepass);
+								// Predict what the correct values should be
+								if (IDENT == "TEMPLETON") {
+									VALUE = (int) ((TEMPLETON + PARK) * 0.01);
+									transmsg += String.valueOf(PARK) + " FROM CR89";
+								} else if (IDENT == "SIKORSKI") {
+									VALUE = (int) ((SIKORSKI + TEMPLETON) * 0.01);
+									transmsg += String.valueOf(TEMPLETON) + " FROM TEMPLETON";
+								} else {
+									VALUE = (int) ((PARK + SIKORSKI) * 0.01);
+									transmsg += String.valueOf(SIKORSKI) + " FROM SIKORSKI";
+								}
+								START = false;
+							} else {
+								// We first passed around our initial points
+								// and gained interest three times
+								VALUE = (int) (VALUE + VALUE*0.01);
+								VALUE = (int) (VALUE + VALUE*0.01);
+								VALUE = (int) (VALUE + VALUE*0.01);
+								if (IDENT == "TEMPLETON") {
+									transmsg += String.valueOf(VALUE) + " FROM CR89";
+								} else if (IDENT == "SIKORSKI") {
+									transmsg += String.valueOf(VALUE) + " FROM TEMPLETON";
+								} else {
+									transmsg += String.valueOf(VALUE) + " FROM SIKORSKI";
 								}
 							}
-
-							out.println(kDE.encrypt(mMsg));
-							// out.println("GET_GAME_IDENTS");
-						}
-						*/
-						break;
-					case 11:
-						String keycmd = "PUBLIC_KEY " + V.toString() + " "
-								+ N.toString();
-						if (!encrypted) {
-							System.out.println("CLIENT>>>:" + keycmd);
-							out.println(keycmd);
-						} else {
-							System.out.println("E>CLIENT>>>:" + keycmd);
-							out.println(kDE.encrypt(keycmd));
-						}
-						break;
-					case 12:
-						String authcmd = "AUTHORIZE_SET";
-						AUTHORIZE_SET.clear();
-						BigInteger j;
-						BigInteger R;
-						int rubbish;
-						
-						for (int i = 0; i < ROUNDS; i++) {
-							R = new BigInteger(String.valueOf(Math.abs(random.nextInt())));
-							j = R.modPow(new BigInteger("2"), N);
-							AUTHORIZE_SET.add(j);
-							rubbish = random.nextInt(800)+101;
-							authcmd = authcmd + " " + String.valueOf(rubbish) + j.toString();
-						}
-						if (!encrypted) {
-							System.out.println("CLIENT>>>:" + authcmd);
-							out.println(authcmd);
-						} else {
-							System.out.println("E>CLIENT>>>:" + authcmd);
-							out.println(kDE.encrypt(authcmd));
-						}
-						break;
-					case 13:
-						String subjcmd = "SUBSET_J";
-						SUBSET_J.clear();
-						BigInteger b;
-						int a = 0;
-						for (int i = 0; i < ROUNDS; i++) {
-							if (a < SUBSET_A.size() && SUBSET_A.get(a) == i) {
-								a++;
+							System.out.println(transmsg);
+							transmsg = kDE.encrypt(transmsg);
+							out.println(transmsg);
+							free = false;
+							break;
+						case 11:
+							// PUBLIC_KEY
+							String keycmd = "PUBLIC_KEY " + V.toString() + " " + N.toString();
+							if (!encrypted) {
+								System.out.println("CLIENT>>>:" + keycmd);
+								out.println(keycmd);
 							} else {
-								b = AUTHORIZE_SET.get(i).mod(N);
-								SUBSET_J.add(b);
-								subjcmd = subjcmd + " " + b;
+								System.out.println("E>CLIENT>>>:" + keycmd);
+								out.println(kDE.encrypt(keycmd));
 							}
-						}
-						if (!encrypted) {
-							System.out.println("CLIENT>>>:" + subjcmd);
-							out.println(subjcmd);
-						} else {
-							System.out.println("E>CLIENT>>>:" + subjcmd);
-							out.println(kDE.encrypt(subjcmd));
-						}
-						break;
-					case 14:
-						String subkcmd = "SUBSET_K";
-						SUBSET_K.clear();
-						BigInteger m;
-						for (int i = 0; i < SUBSET_A.size(); i++) {
-							m = S.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i))).mod(N);
-							SUBSET_K.add(m);
-							subkcmd = subkcmd + " " + m;
-						}
-						if (!encrypted) {
-							System.out.println("CLIENT>>>:" + subkcmd);
-							out.println(subkcmd);
-						} else {
-							System.out.println("E>CLIENT>>>:" + subkcmd);
-							out.println(kDE.encrypt(subkcmd));
-						}
-						break;
-					case -1:
+							break;
+						case 12:
+							// AUTHORIZATION_SET
+							String authcmd = "AUTHORIZE_SET";
+							// Empty the arraylist
+							AUTHORIZE_SET.clear();
+							BigInteger j;
+							BigInteger R;
+							int leftrubbish;
+							int rightrubbish;
+
+							for (int i = 0; i < ROUNDS; i++) {
+								// R is a positive random number
+								R = new BigInteger(String.valueOf(Math.abs(random.nextInt())));
+								// j is R[i]^2 mod n
+								j = R.modPow(new BigInteger("2"), N);
+								// Store the actual authorize set value
+								AUTHORIZE_SET.add(j);
+								// Add some extra random integers to mess with other people
+								// Five on the left
+								leftrubbish = random.nextInt(80000) + 10001;
+								// Three on the right
+								rightrubbish = random.nextInt(800) + 101;
+								// Command to send to the server via the monitor
+								authcmd = authcmd + " " + String.valueOf(leftrubbish) + j.toString() + String.valueOf(rightrubbish);
+							}
+							if (!encrypted) {
+								System.out.println("CLIENT>>>:" + authcmd);
+								out.println(authcmd);
+							} else {
+								System.out.println("E>CLIENT>>>:" + authcmd);
+								out.println(kDE.encrypt(authcmd));
+							}
+							break;
+						case 13:
+							// SUBSET_J
+							String subjcmd = "SUBSET_J";
+							// Empty the arraylist
+							SUBSET_J.clear();
+							BigInteger b;
+							int a = 0;
+							// SUBSET_A is a list of indices in order
+							// Our J values include all of the indices not in SUBSET_A
+							for (int i = 0; i < ROUNDS; i++) {
+								if (a < SUBSET_A.size() && SUBSET_A.get(a) == i) {
+									a++;
+								} else {
+									// R[i] mod n
+									b = AUTHORIZE_SET.get(i).mod(N);
+									// Add J[i] to the arraylist
+									SUBSET_J.add(b);
+									// Send it as is to the server via the monitor
+									subjcmd = subjcmd + " " + b;
+								}
+							}
+							if (!encrypted) {
+								System.out.println("CLIENT>>>:" + subjcmd);
+								out.println(subjcmd);
+							} else {
+								System.out.println("E>CLIENT>>>:" + subjcmd);
+								out.println(kDE.encrypt(subjcmd));
+							}
+							break;
+						case 14:
+							// SUBSET_K
+							String subkcmd = "SUBSET_K";
+							// Empty the arraylist
+							SUBSET_K.clear();
+							BigInteger m;
+							// SUBSET_K operates on all of the SUBSET_A indexes
+							for (int i = 0; i < SUBSET_A.size(); i++) {
+								// s * R[A[i]] mod n
+								m = S.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i))).mod(N);
+								// Add K[i] to the arraylist
+								SUBSET_K.add(m);
+								// Send it as is to the server via the monitor
+								subkcmd = subkcmd + " " + m;
+							}
+							if (!encrypted) {
+								System.out.println("CLIENT>>>:" + subkcmd);
+								out.println(subkcmd);
+							} else {
+								System.out.println("E>CLIENT>>>:" + subkcmd);
+								out.println(kDE.encrypt(subkcmd));
+							}
+							break;
+						case -1:
 					}
 				}
 			} catch (Exception e) {

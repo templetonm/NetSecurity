@@ -1,4 +1,5 @@
-/* The following code is from Prof Franco's webpage
+/* Karn.java
+ * The following code is from Prof Franco's webpage
  * http://gauss.ececs.uc.edu/Courses/c653/lectures/Java/Karn/Karn.java
  * Formatting was added by Eclipse for readability.
  */

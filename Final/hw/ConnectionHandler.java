@@ -1,3 +1,17 @@
+/* ConnectionHandler.java
+ * This is the ConnectionHandler class responsible for handling the "Server"
+ * The initial code was from Prof Franco's webpage
+ * http://gauss.ececs.uc.edu/Courses/c653/homework/Specs/ActiveClient.java
+ * 
+ * Written by Robert Sikorski
+ * 
+ * Modified by Ben Park
+ * - Added Zero-Knowledge authentication
+ * 
+ * Modified by Michael Templeton
+ * - Changed zero-knowledge authentication protocol to match client behavior
+ */
+
 package hw;
 
 import java.io.BufferedReader;
@@ -40,16 +54,13 @@ class ConnectionHandler extends Super implements Runnable {
 		try {
 			incoming = sSocket;
 			out = new PrintWriter(incoming.getOutputStream(), true);
-			in = new BufferedReader(new InputStreamReader(
-					incoming.getInputStream()));
+			in = new BufferedReader(new InputStreamReader(incoming.getInputStream()));
 			IDENT = id;
 			COOKIEFILE = IDENT + ".txt";
 			threadID = thID;
 			dhe = new DHExchange("DHKey");
 		} catch (Exception e) {
-			System.out
-					.println("ConnectionHandler [ConnectionHandler]: Error in Server: "
-							+ e);
+			System.out.println("ConnectionHandler [ConnectionHandler]: Error in Server: " + e);
 		}
 	}
 
@@ -67,8 +78,7 @@ class ConnectionHandler extends Super implements Runnable {
 					waiting = false;
 
 					while (!waiting) {
-						mMsg = GetMonitorMessage(encrypted, thisIsClient,
-								threadID);
+						mMsg = GetMonitorMessage(encrypted, thisIsClient, threadID);
 
 						if (mMsg == null) {
 							// Unlike in the client, where we have someone to
@@ -113,12 +123,13 @@ class ConnectionHandler extends Super implements Runnable {
 									V = new BigInteger(tokens[2]);
 									N = new BigInteger(tokens[3]);
 								} else if (tokens[1].equals("AUTHORIZE_SET")) {
+									// Empty the arraylist
 									AUTHORIZE_SET.clear();
 									int i = 2;
 									while (true) {
 										try {
-											// Strip the first three characters
-											AUTHORIZE_SET.add(new BigInteger(tokens[i].substring(3)));
+											// Strip the first five characters and the last three
+											AUTHORIZE_SET.add(new BigInteger(tokens[i].substring(5, tokens[i].length()-3)));
 											i++;
 										} catch (Exception e) {
 											// AUTHORIZE_SET filled
@@ -126,6 +137,7 @@ class ConnectionHandler extends Super implements Runnable {
 										}
 									}
 								} else if (tokens[1].equals("SUBSET_K")) {
+									// Empty the arraylist
 									SUBSET_K.clear();
 									int i = 2;
 									while (true) {
@@ -138,12 +150,12 @@ class ConnectionHandler extends Super implements Runnable {
 										}
 									}
 								} else if (tokens[1].equals("SUBSET_J")) {
+									// Empty the arraylist
 									SUBSET_J.clear();
 									int i = 2;
 									while (true) {
 										try {
-											SUBSET_J.add(new BigInteger(
-													tokens[i]));
+											SUBSET_J.add(new BigInteger(tokens[i]));
 											i++;
 										} catch (Exception e) {
 											// SUBSET_J filled
@@ -152,9 +164,7 @@ class ConnectionHandler extends Super implements Runnable {
 									}
 								}
 							} else if (tokens[0].equals("TRANSFER:")) {
-								System.out
-										.format("E>SERVER-%d>>>:Starting authentication.\n",
-												threadID);
+								System.out.format("E>SERVER-%d>>>:Starting authentication.\n", threadID);
 							}
 						}
 
@@ -164,155 +174,155 @@ class ConnectionHandler extends Super implements Runnable {
 					}
 
 					switch (sMsg) {
-					case 0:
-						// IDENT
-						String identmsg = "IDENT " + IDENT + " "
-								+ dhe.getPublicKey().toString(32);
+						case 0:
+							// IDENT
+							// DH key is in base 32
+							String identmsg = "IDENT " + IDENT + " " + dhe.getPublicKey().toString(32);
 
-						if (!encrypted) {
-							System.out.format("SERVER-%d>>>:%s\n", threadID,
-									identmsg);
-							out.println(identmsg);
-						} else {
-							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
-									identmsg);
-							out.println(identmsg);
-						}
-						break;
-					case 2:
-						// ALIVE
-						String alivemsg = "ALIVE ";
-						fcin = new BufferedReader(new FileReader(COOKIEFILE));
-						alivemsg += fcin.readLine();
-						fcin.close();
-
-						if (!encrypted) {
-							System.out.format("SERVER-%d>>>:%s\n", threadID,
-									alivemsg);
-							out.println(alivemsg);
-						} else {
-							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
-									alivemsg);
-							out.println(kDE.encrypt(alivemsg));
-						}
-						break;
-					case 3:
-						// QUIT
-						String quitmsg = "QUIT";
-
-						if (!encrypted) {
-							System.out.format("SERVER-%d>>>:%s\n", threadID,
-									quitmsg);
-							out.println(quitmsg);
-						} else {
-							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
-									quitmsg);
-							out.println(kDE.encrypt(quitmsg));
-						}
-						break;
-					case 10:
-						// ROUNDS
-						
-						if (encrypted) {
-							//Random numGenerator = new Random();
-							ROUNDS = 5;
-							//FAKE_ROUNDS = numGenerator.nextInt(8) + 6;
-							String roundmsg = "ROUNDS " + ROUNDS;
-							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
-									roundmsg);
-							out.println(kDE.encrypt(roundmsg));
-						}
-						break;
-					case 11:
-						// SUBSET_A
-						
-						if (encrypted) {
-							int MAX_NUM = ROUNDS / 2;
-							Random rand = new Random();
-							int A_SIZE = rand.nextInt(MAX_NUM) + 1;
-							HashSet<Integer> tmpSet = new HashSet<Integer>();
-							SUBSET_A.clear();
-							SUBSET_B.clear();
-
-							for (int i = 0; i < A_SIZE; i++) {
-								tmpSet.add(rand.nextInt(ROUNDS));
+							if (!encrypted) {
+								System.out.format("SERVER-%d>>>:%s\n", threadID, identmsg);
+								out.println(identmsg);
+							} else {
+								System.out.format("E>SERVER-%d>>>:%s\n", threadID, identmsg);
+								out.println(identmsg);
 							}
-							SUBSET_A.addAll(tmpSet);
-							Collections.sort(SUBSET_A);
-							String setamsg = "SUBSET_A";
-							String setbmsg = "SUBSET_B";
+							break;
+						case 2:
+							// ALIVE
+							String alivemsg = "ALIVE ";
+							fcin = new BufferedReader(new FileReader(COOKIEFILE));
+							// Send our cookie to the monitor in an alive
+							alivemsg += fcin.readLine();
+							fcin.close();
 
-							for (int i = 0; i < SUBSET_A.size(); i++) {
-								setamsg += " "
-										+ String.valueOf(SUBSET_A.get(i));
+							if (!encrypted) {
+								System.out.format("SERVER-%d>>>:%s\n", threadID, alivemsg);
+								out.println(alivemsg);
+							} else {
+								System.out.format("E>SERVER-%d>>>:%s\n", threadID, alivemsg);
+								out.println(kDE.encrypt(alivemsg));
 							}
-							
-							for (int i = 0; i < ROUNDS; i++) {
-								if (!SUBSET_A.contains(i)) {
-									SUBSET_B.add(i);
-									setbmsg += " " + String.valueOf(i);
+							break;
+						case 3:
+							// QUIT
+							String quitmsg = "QUIT";
+
+							if (!encrypted) {
+								System.out.format("SERVER-%d>>>:%s\n", threadID, quitmsg);
+								out.println(quitmsg);
+							} else {
+								System.out.format("E>SERVER-%d>>>:%s\n", threadID, quitmsg);
+								out.println(kDE.encrypt(quitmsg));
+							}
+							break;
+						case 10:
+							// ROUNDS
+
+							if (encrypted) {
+								Random numGenerator = new Random();
+								// The monitor expects a minimum of five rounds
+								ROUNDS = numGenerator.nextInt(7) + 5;
+								String roundmsg = "ROUNDS " + ROUNDS;
+								System.out.format("E>SERVER-%d>>>:%s\n", threadID, roundmsg);
+								out.println(kDE.encrypt(roundmsg));
+							}
+							break;
+						case 11:
+							// SUBSET_A
+
+							if (encrypted) {
+								// Make sure we don't put all indexes in SUBSET_A
+								int MAX_NUM = ROUNDS / 2;
+								Random rand = new Random();
+								// SUBSET_A will have 1-MAX_NUM values in it
+								int A_SIZE = rand.nextInt(MAX_NUM) + 1;
+								// Lets use a HashSet so that we don't store duplicates
+								HashSet<Integer> tmpSet = new HashSet<Integer>();
+								// Empty our arraylists
+								SUBSET_A.clear();
+								SUBSET_B.clear();
+
+								// Generate random index values and add them to the HashSet
+								for (int i = 0; i < A_SIZE; i++) {
+									tmpSet.add(rand.nextInt(ROUNDS));
 								}
-							}
+								// Add these unique values to our arraylist
+								SUBSET_A.addAll(tmpSet);
+								// Sort the indexes in order
+								Collections.sort(SUBSET_A);
+								String setamsg = "SUBSET_A";
+								String setbmsg = "SUBSET_B";
 
-							System.out.format("E>SERVER-%d>>>:%s\n%s\n", threadID,
-									setamsg, setbmsg);
-							out.println(kDE.encrypt(setamsg));
-						}
-						break;
-					case 12:
-						// TRANSFER_RESPONSE
-						String transrespmsg = "TRANSFER_RESPONSE DECLINE";
-						BigInteger test, actual;
-						Boolean success = true;
-
-						if (encrypted) {
-							for (int i = 0; i < SUBSET_A.size(); i++) {
-								test = SUBSET_K.get(i).modPow(new BigInteger("2"), N);
-								actual = V.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i)).pow(2)).mod(N);
-
-								if (test.equals(actual)) {
-									System.out.format(
-											"K value: %s == %s Good to go!\n",
-											test, actual);
-								} else {
-									System.out.format(
-											"K value: %s != %s Failed!\n",
-											test, actual);
-									success = false;
+								// Build the message to send to the client
+								for (int i = 0; i < SUBSET_A.size(); i++) {
+									setamsg += " " + String.valueOf(SUBSET_A.get(i));
 								}
-							}
 
-							for (int i = 0; i < SUBSET_B.size(); i++) {
-								test = SUBSET_J.get(i).modPow(new BigInteger("2"), N);
-								actual = AUTHORIZE_SET.get(SUBSET_B.get(i)).modPow(new BigInteger("2"), N);
-
-								if (test.equals(actual)) {
-									System.out.format(
-											"J value: %s == %s Good to go!\n",
-											test, actual);
-								} else {
-									System.out.format(
-											"J value: %s != %s Failed!\n",
-											test, actual);
-									success = false;
+								// Add all of the indexes not found in SUBSET_A
+								// to SUBSET_B so that we can use it later to validate
+								for (int i = 0; i < ROUNDS; i++) {
+									if (!SUBSET_A.contains(i)) {
+										SUBSET_B.add(i);
+										// Just for logging purposes
+										setbmsg += " " + String.valueOf(i);
+									}
 								}
-							}
 
-							// Safe to ACCEPT?
-							if (success == true) {
-								transrespmsg = "TRANSFER_RESPONSE ACCEPT";
+								System.out.format("E>SERVER-%d>>>:%s\n%s\n", threadID, setamsg, setbmsg);
+								out.println(kDE.encrypt(setamsg));
 							}
-							
-							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
-									transrespmsg);
-							out.println(kDE.encrypt(transrespmsg));
-						} else {
-							transrespmsg = "TRANSFER_RESPONSE DECLINE";
-							System.out.format("E>SERVER-%d>>>:%s\n", threadID,
-									transrespmsg);
-							out.println(kDE.encrypt(transrespmsg));
-						}
-						break;
+							break;
+						case 12:
+							// TRANSFER_RESPONSE
+							// Default behavior is to decline
+							String transrespmsg = "TRANSFER_RESPONSE DECLINE";
+							BigInteger test;
+							BigInteger actual;
+							Boolean success = true;
+
+							if (encrypted) {
+								for (int i = 0; i < SUBSET_A.size(); i++) {
+									// K[i]^2 mod N
+									test = SUBSET_K.get(i).modPow(new BigInteger("2"), N);
+									// V * R[A[i]]^2 mod N
+									actual = V.multiply(AUTHORIZE_SET.get(SUBSET_A.get(i)).pow(2)).mod(N);
+
+									// Use .equals instead to compare the BigIntegers
+									if (test.equals(actual)) {
+										System.out.format("K value: %s == %s Good to go!\n", test, actual);
+									} else {
+										System.out.format("K value: %s != %s Failed!\n", test, actual);
+										success = false;
+									}
+								}
+
+								for (int i = 0; i < SUBSET_B.size(); i++) {
+									// J[i]^2 mod N
+									test = SUBSET_J.get(i).modPow(new BigInteger("2"), N);
+									// R[B[i]]^2 mod N
+									actual = AUTHORIZE_SET.get(SUBSET_B.get(i)).modPow(new BigInteger("2"), N);
+
+									if (test.equals(actual)) {
+										System.out.format("J value: %s == %s Good to go!\n", test, actual);
+									} else {
+										System.out.format("J value: %s != %s Failed!\n", test, actual);
+										success = false;
+									}
+								}
+
+								// Safe to ACCEPT?
+								if (success == true) {
+									transrespmsg = "TRANSFER_RESPONSE ACCEPT";
+								}
+
+								System.out.format("E>SERVER-%d>>>:%s\n", threadID, transrespmsg);
+								out.println(kDE.encrypt(transrespmsg));
+							} else {
+								transrespmsg = "TRANSFER_RESPONSE DECLINE";
+								System.out.format("E>SERVER-%d>>>:%s\n", threadID, transrespmsg);
+								out.println(kDE.encrypt(transrespmsg));
+							}
+							break;
 					}
 
 					if (done) {
